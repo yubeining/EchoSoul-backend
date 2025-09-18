@@ -5,7 +5,9 @@ SQLAlchemy models for the application
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float
 from sqlalchemy.sql import func
-from database import Base
+from app.db import get_database_base
+
+Base = get_database_base()
 
 class User(Base):
     """用户模型"""

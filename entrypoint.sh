@@ -47,4 +47,4 @@ echo "  - ReDoc: http://localhost:8080/redoc"
 echo "  - Health check: http://localhost:8080/health"
 
 # Start with uvicorn for production
-uvicorn echosoul:app --host 0.0.0.0 --port 8080 --workers 1
+uvicorn app.main:app --host 0.0.0.0 --port 8080 --workers 1

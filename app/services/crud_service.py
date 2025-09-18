@@ -6,8 +6,8 @@ Database operations for all models
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from typing import List, Optional
-from models import User, AIRequest, SystemLog
-from schemas import UserCreate, UserUpdate, AIRequestCreate, AIRequestUpdate, SystemLogCreate
+from app.models.sqlalchemy_models import User, AIRequest, SystemLog
+from app.schemas.pydantic_schemas import UserCreate, UserUpdate, AIRequestCreate, AIRequestUpdate, SystemLogCreate
 
 # User CRUD operations
 def get_user(db: Session, user_id: int) -> Optional[User]:

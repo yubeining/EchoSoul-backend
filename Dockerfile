@@ -37,7 +37,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 RUN groupadd -r echosoul && useradd -r -g echosoul echosoul
 
 # Copy application files
-COPY echosoul.py .
+COPY app/ ./app/
+COPY config/ ./config/
 COPY entrypoint.sh .
 
 # Make entrypoint executable
