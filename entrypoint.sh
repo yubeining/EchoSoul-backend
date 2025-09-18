@@ -7,15 +7,25 @@ set -e  # Exit on any error
 
 echo "Starting EchoSoul AI Platform Backend Service..."
 
-# Check if virtual environment exists
-if [ ! -d "venv" ]; then
+# Determine virtual environment path based on environment
+if [ -d "/opt/venv" ]; then
+    # Docker environment
+    VENV_PATH="/opt/venv"
+    echo "Detected Docker environment, using /opt/venv"
+elif [ -d "venv" ]; then
+    # Local development environment
+    VENV_PATH="venv"
+    echo "Detected local environment, using ./venv"
+else
+    # Create virtual environment if it doesn't exist
     echo "Creating Python virtual environment..."
     python3 -m venv venv
+    VENV_PATH="venv"
 fi
 
 # Activate virtual environment
-echo "Activating virtual environment..."
-source venv/bin/activate
+echo "Activating virtual environment at: $VENV_PATH"
+source $VENV_PATH/bin/activate
 
 # Install/upgrade dependencies if requirements.txt exists
 if [ -f "requirements.txt" ]; then
