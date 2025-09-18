@@ -1,22 +1,26 @@
-# Python HTTP Server Example
+# EchoSoul-backend
+EchoSoul AI Platform Backend Service
 
-This is a simple Python HTTP server application that demonstrates basic server functionality.
+## 项目描述
 
-## Project Description
+这是一个基于Python的HTTP服务器应用程序，演示了基本的服务器功能。该项目使用Python内置的`http.server`模块创建一个基本的HTTP服务器，监听8080端口并在访问时返回"Hello World!"消息。
 
-This project creates a basic HTTP server using Python's built-in `http.server` module. The server listens on port 8080 and returns a "Hello World!" message when accessed.
+## 环境要求
 
-## Environment
+该项目运行在Debian 12系统上，Python已预配置在Devbox环境中。您无需担心自己设置Python或系统依赖项，开发环境包含了构建和运行Python应用程序所需的所有必要工具。如果您需要根据特定要求进行调整，可以相应地修改配置文件。
 
-This project runs on a Debian 12 system with Python, which is pre-configured in the Devbox environment. You don't need to worry about setting up Python or system dependencies yourself. The development environment includes all necessary tools for building and running Python applications. If you need to make adjustments to match your specific requirements, you can modify the configuration files accordingly.
+## 项目执行
 
-## Project Execution
+**开发模式：** 对于正常的开发环境，只需进入Devbox并在终端中运行`bash entrypoint.sh`。
 
-**Development mode:** For normal development environment, simply enter Devbox and run `bash entrypoint.sh` in the terminal.
+**生产模式：** 发布后，项目将根据`entrypoint.sh`脚本自动打包成Docker镜像并部署。
 
-**Production mode:** After release, the project will be automatically packaged into a Docker image and deployed according to the `entrypoint.sh` script.
+## 技术栈
 
+- Python 3.11
+- HTTP Server
+- Docker (生产环境)
 
 DevBox: Code. Build. Deploy. We've Got the Rest.
 
-With DevBox, you can focus entirely on writing great code while we handle the infrastructure, scaling, and deployment. Seamless development from start to production.
+通过DevBox，您可以完全专注于编写优秀的代码，而我们负责基础设施、扩展和部署。从开发到生产的无缝体验。
