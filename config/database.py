@@ -14,7 +14,7 @@ class DatabaseConfig:
     MYSQL_PORT = 3306
     MYSQL_USER = "root"
     MYSQL_PASSWORD = "kzmtbc6b"
-    MYSQL_DATABASE = "echosoul"
+    MYSQL_DATABASE = "EchoSoul"
     
     # Redis Configuration (for future use)
     REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
