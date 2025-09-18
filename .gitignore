@@ -155,6 +155,11 @@ lib/
 lib64/
 pyvenv.cfg
 
+# New virtual environment
+venv/
+env/
+ENV/
+
 # Logs
 *.log
 

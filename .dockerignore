@@ -1,0 +1,49 @@
+# Docker ignore file for EchoSoul AI Platform Backend Service
+
+# Git
+.git
+.gitignore
+
+# Virtual environments
+venv/
+env/
+ENV/
+bin/
+include/
+lib/
+lib64/
+pyvenv.cfg
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Documentation
+README.md
+*.md
+
+# Development files
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Temporary files
+*.tmp
+*.temp
