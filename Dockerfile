@@ -37,11 +37,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 RUN groupadd -r echosoul && useradd -r -g echosoul echosoul
 
 # Copy application files
-COPY hello.py .
+COPY echosoul.py .
 COPY entrypoint.sh .
-
-# Update entrypoint.sh to use the correct virtual environment path in Docker
-RUN sed -i 's|source venv/bin/activate|source /opt/venv/bin/activate|g' entrypoint.sh
 
 # Make entrypoint executable
 RUN chmod +x entrypoint.sh

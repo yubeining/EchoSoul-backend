@@ -127,7 +127,7 @@ async def api_info():
 if __name__ == "__main__":
     # Run with uvicorn
     uvicorn.run(
-        "hello:app",
+        "echosoul:app",
         host="0.0.0.0",
         port=8080,
         reload=True,  # Enable auto-reload in development
