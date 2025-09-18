@@ -3,13 +3,29 @@ EchoSoul AI Platform Backend Service
 FastAPI-based HTTP server for AI platform services
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Dict, Any
+from sqlalchemy.orm import Session
+from typing import Dict, Any, List
 import uvicorn
 import os
+
+# Import database and models
+from database import get_db, create_tables, test_connection
+from models import User, AIRequest, SystemLog
+from schemas import (
+    UserCreate, UserUpdate, UserResponse,
+    AIRequestCreate, AIRequestUpdate, AIRequestResponse,
+    SystemLogCreate, SystemLogResponse,
+    MessageResponse, DatabaseStatusResponse
+)
+from crud import (
+    get_users, get_user, create_user, update_user, delete_user,
+    get_ai_requests, get_ai_request, create_ai_request, update_ai_request, delete_ai_request,
+    get_system_logs, create_system_log,
+    get_user_count, get_ai_request_count, get_system_log_count
+)
 
 # Create FastAPI application
 app = FastAPI(
@@ -28,6 +44,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Database initialization
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database on startup"""
+    try:
+        # Test database connection
+        connected, message = test_connection()
+        if connected:
+            # Create tables
+            create_tables()
+            print("✅ Database connected and tables created successfully")
+        else:
+            print(f"❌ Database connection failed: {message}")
+    except Exception as e:
+        print(f"❌ Database initialization error: {str(e)}")
 
 # Pydantic models for request/response
 class HealthResponse(BaseModel):
@@ -120,8 +152,121 @@ async def api_info():
             "echo": "/echo",
             "hello": "/hello",
             "docs": "/docs",
-            "redoc": "/redoc"
+            "redoc": "/redoc",
+            "database": "/api/db/status",
+            "users": "/api/users",
+            "ai_requests": "/api/ai-requests",
+            "logs": "/api/logs"
         }
+    }
+
+# Database status endpoint
+@app.get("/api/db/status", response_model=DatabaseStatusResponse)
+async def database_status():
+    """Check database connection status"""
+    connected, message = test_connection()
+    return DatabaseStatusResponse(
+        connected=connected,
+        message=message,
+        tables_created=connected
+    )
+
+# User endpoints
+@app.get("/api/users", response_model=List[UserResponse])
+async def list_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """Get list of users"""
+    users = get_users(db, skip=skip, limit=limit)
+    return users
+
+@app.post("/api/users", response_model=UserResponse)
+async def create_user_endpoint(user: UserCreate, db: Session = Depends(get_db)):
+    """Create a new user"""
+    # Check if username or email already exists
+    if get_user_by_username(db, user.username):
+        raise HTTPException(status_code=400, detail="Username already registered")
+    if get_user_by_email(db, user.email):
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    return create_user(db, user)
+
+@app.get("/api/users/{user_id}", response_model=UserResponse)
+async def get_user_endpoint(user_id: int, db: Session = Depends(get_db)):
+    """Get user by ID"""
+    user = get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@app.put("/api/users/{user_id}", response_model=UserResponse)
+async def update_user_endpoint(user_id: int, user_update: UserUpdate, db: Session = Depends(get_db)):
+    """Update user"""
+    user = update_user(db, user_id, user_update)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@app.delete("/api/users/{user_id}", response_model=MessageResponse)
+async def delete_user_endpoint(user_id: int, db: Session = Depends(get_db)):
+    """Delete user"""
+    if delete_user(db, user_id):
+        return MessageResponse(message="User deleted successfully")
+    raise HTTPException(status_code=404, detail="User not found")
+
+# AI Request endpoints
+@app.get("/api/ai-requests", response_model=List[AIRequestResponse])
+async def list_ai_requests(skip: int = 0, limit: int = 100, user_id: int = None, db: Session = Depends(get_db)):
+    """Get list of AI requests"""
+    requests = get_ai_requests(db, skip=skip, limit=limit, user_id=user_id)
+    return requests
+
+@app.post("/api/ai-requests", response_model=AIRequestResponse)
+async def create_ai_request_endpoint(request: AIRequestCreate, db: Session = Depends(get_db)):
+    """Create a new AI request"""
+    return create_ai_request(db, request)
+
+@app.get("/api/ai-requests/{request_id}", response_model=AIRequestResponse)
+async def get_ai_request_endpoint(request_id: int, db: Session = Depends(get_db)):
+    """Get AI request by ID"""
+    request = get_ai_request(db, request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="AI request not found")
+    return request
+
+@app.put("/api/ai-requests/{request_id}", response_model=AIRequestResponse)
+async def update_ai_request_endpoint(request_id: int, request_update: AIRequestUpdate, db: Session = Depends(get_db)):
+    """Update AI request"""
+    request = update_ai_request(db, request_id, request_update)
+    if not request:
+        raise HTTPException(status_code=404, detail="AI request not found")
+    return request
+
+@app.delete("/api/ai-requests/{request_id}", response_model=MessageResponse)
+async def delete_ai_request_endpoint(request_id: int, db: Session = Depends(get_db)):
+    """Delete AI request"""
+    if delete_ai_request(db, request_id):
+        return MessageResponse(message="AI request deleted successfully")
+    raise HTTPException(status_code=404, detail="AI request not found")
+
+# System Log endpoints
+@app.get("/api/logs", response_model=List[SystemLogResponse])
+async def list_system_logs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """Get system logs"""
+    logs = get_system_logs(db, skip=skip, limit=limit)
+    return logs
+
+@app.post("/api/logs", response_model=SystemLogResponse)
+async def create_system_log_endpoint(log: SystemLogCreate, db: Session = Depends(get_db)):
+    """Create a system log entry"""
+    return create_system_log(db, log)
+
+# Statistics endpoint
+@app.get("/api/stats")
+async def get_statistics(db: Session = Depends(get_db)):
+    """Get system statistics"""
+    return {
+        "users": get_user_count(db),
+        "ai_requests": get_ai_request_count(db),
+        "system_logs": get_system_log_count(db)
     }
 
 if __name__ == "__main__":
