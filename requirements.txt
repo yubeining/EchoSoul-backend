@@ -1,10 +1,9 @@
 # EchoSoul AI Platform Backend Service Dependencies
 # Core dependencies for HTTP server and AI platform
 
-# Web framework (if needed in future)
-# flask>=2.3.0
-# fastapi>=0.100.0
-# uvicorn>=0.23.0
+# Web framework - FastAPI
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
 
 # HTTP client libraries
 # requests>=2.31.0

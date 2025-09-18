@@ -28,6 +28,13 @@ fi
 echo "Python version: $(python --version)"
 echo "Pip version: $(pip --version)"
 
-# Start the application
-echo "Starting EchoSoul HTTP server..."
-python hello.py
+# Start the FastAPI application with uvicorn
+echo "Starting EchoSoul FastAPI server..."
+echo "Server will be available at:"
+echo "  - Main page: http://localhost:8080"
+echo "  - API docs: http://localhost:8080/docs"
+echo "  - ReDoc: http://localhost:8080/redoc"
+echo "  - Health check: http://localhost:8080/health"
+
+# Start with uvicorn for production
+uvicorn hello:app --host 0.0.0.0 --port 8080 --workers 1
