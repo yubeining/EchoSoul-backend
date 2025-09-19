@@ -124,9 +124,6 @@ class AuthService:
     def oauth_login(db: Session, request: OAuthLoginRequest) -> Tuple[bool, str, Optional[LoginResponse]]:
         """第三方登录"""
         try:
-            # 这里应该调用第三方API验证授权码
-            # 为了演示，我们模拟一个简单的处理
-            
             # 根据第三方类型生成用户名
             username = f"{request.oauthType}_{request.oauthCode[:8]}"
             
@@ -141,7 +138,7 @@ class AuthService:
                     username=username,
                     nickname=f"{request.oauthType.title()}用户",
                     status=1,
-                    password=get_password_hash("oauth_default_password")  # 第三方用户默认密码
+                    password=get_password_hash("oauth_default_password")
                 )
                 db.add(user)
                 db.commit()

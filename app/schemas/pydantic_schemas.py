@@ -3,33 +3,11 @@ EchoSoul AI Platform Pydantic Schemas
 Request and response models for API endpoints
 """
 
-from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+from pydantic import BaseModel
+from typing import Optional
 from datetime import datetime
 
-# User schemas
-class UserBase(BaseModel):
-    username: str
-    email: str
-    full_name: Optional[str] = None
-
-class UserCreate(UserBase):
-    pass
-
-class UserUpdate(BaseModel):
-    username: Optional[str] = None
-    email: Optional[str] = None
-    full_name: Optional[str] = None
-    is_active: Optional[bool] = None
-
-class UserResponse(UserBase):
-    id: int
-    is_active: bool
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-    
-    class Config:
-        from_attributes = True
+# User schemas 已移除，项目使用 auth_schemas.py 中的认证相关schemas
 
 # AI Request 和 System Log schemas 已移除，因为项目中没有实际使用这些表
 

@@ -11,7 +11,7 @@ import logging
 from app.db import get_database_session
 from app.core.auth import get_current_user
 from app.core.security_monitor import security_monitor, SecurityEventType, SecurityLevel
-from app.middleware.security import SecurityMiddleware
+# SecurityMiddleware 导入已移除，当前未使用
 from app.models.user_models import AuthUser
 
 router = APIRouter()
@@ -175,51 +175,4 @@ async def get_security_config(current_user: AuthUser = Depends(get_current_user)
         logger.error(f"Failed to get security config: {e}")
         raise HTTPException(status_code=500, detail="获取安全配置失败")
 
-@router.post("/test/event", summary="测试安全事件记录")
-async def test_security_event(
-    event_type: str,
-    level: str,
-    details: Dict[str, Any],
-    current_user: AuthUser = Depends(get_current_user)
-):
-    """测试安全事件记录功能"""
-    try:
-        # 验证事件类型
-        try:
-            event_type_enum = SecurityEventType(event_type)
-        except ValueError:
-            raise HTTPException(status_code=400, detail="无效的事件类型")
-        
-        # 验证安全级别
-        try:
-            level_enum = SecurityLevel(level)
-        except ValueError:
-            raise HTTPException(status_code=400, detail="无效的安全级别")
-        
-        # 记录测试事件
-        event = security_monitor.log_security_event(
-            event_type=event_type_enum,
-            level=level_enum,
-            client_ip="127.0.0.1",
-            user_agent="Test Client",
-            request_path="/api/security/test/event",
-            request_method="POST",
-            details=details,
-            user_id=current_user.id
-        )
-        
-        return {
-            "code": 1,
-            "msg": "测试安全事件记录成功",
-            "data": {
-                "event_id": event.event_id,
-                "event_type": event.event_type.value,
-                "level": event.level.value,
-                "timestamp": event.timestamp
-            }
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Failed to test security event: {e}")
-        raise HTTPException(status_code=500, detail="测试安全事件记录失败")
+# 测试端点已移除，生产环境不需要测试功能

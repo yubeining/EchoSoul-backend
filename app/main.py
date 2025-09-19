@@ -114,8 +114,8 @@ async def root():
                     <li><a href="/redoc">ReDoc Documentation</a></li>
                     <li><a href="/api/db/status">Database Status</a></li>
                     <li><a href="/api/auth">Auth API</a></li>
-                    <li><a href="/api/ai-requests">AI Requests API</a></li>
-                    <li><a href="/api/logs">System Logs API</a></li>
+                    <li><a href="/api/users">User Search API</a></li>
+                    <li><a href="/api/storage">Storage API</a></li>
                     <li><a href="/api/stats">Statistics API</a></li>
                 </ul>
             </div>
