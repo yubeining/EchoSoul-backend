@@ -31,49 +31,7 @@ class UserResponse(UserBase):
     class Config:
         from_attributes = True
 
-# AI Request schemas
-class AIRequestBase(BaseModel):
-    request_type: str
-    prompt: str
-    user_id: Optional[int] = None
-
-class AIRequestCreate(AIRequestBase):
-    pass
-
-class AIRequestUpdate(BaseModel):
-    response: Optional[str] = None
-    status: Optional[str] = None
-    tokens_used: Optional[int] = None
-    processing_time: Optional[float] = None
-
-class AIRequestResponse(AIRequestBase):
-    id: int
-    response: Optional[str] = None
-    status: str
-    tokens_used: int
-    processing_time: float
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-    
-    class Config:
-        from_attributes = True
-
-# System Log schemas
-class SystemLogBase(BaseModel):
-    level: str
-    message: str
-    module: Optional[str] = None
-    user_id: Optional[int] = None
-
-class SystemLogCreate(SystemLogBase):
-    pass
-
-class SystemLogResponse(SystemLogBase):
-    id: int
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
+# AI Request 和 System Log schemas 已移除，因为项目中没有实际使用这些表
 
 # Generic response schemas
 class MessageResponse(BaseModel):
