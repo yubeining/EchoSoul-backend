@@ -4,7 +4,7 @@ API Package - EchoSoul AI Platform
 """
 
 from fastapi import APIRouter
-from app.api import database, stats, auth, security, user_search
+from app.api import database, stats, auth, security, user_search, chat
 from config.settings import settings
 
 # 创建主API路由器
@@ -14,6 +14,7 @@ api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 api_router.include_router(database.router, prefix="/db", tags=["database"])
 api_router.include_router(user_search.router, prefix="/users", tags=["user-search"])
+api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
 # ai_requests 和 system_logs 路由已移除，因为项目中没有实际使用这些表
 api_router.include_router(stats.router, prefix="/stats", tags=["statistics"])
 api_router.include_router(security.router, prefix="/security", tags=["security"])
