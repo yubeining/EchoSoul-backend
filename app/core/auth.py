@@ -28,14 +28,20 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 # HTTP Bearer认证
 security = HTTPBearer()
 
-def generate_uid() -> str:
-    """生成8位唯一用户标识符"""
-    while True:
-        # 生成8位随机字符串，包含数字和大写字母
-        uid = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-        # 确保不以数字开头
-        if not uid[0].isdigit():
-            return uid
+def generate_uid(db: Session) -> str:
+    """生成8位唯一用户标识符（纯数字递增）"""
+    # 查询当前最大的数字UID
+    max_uid_user = db.query(User).filter(User.uid.regexp_match(r'^\d{8}$')).order_by(User.uid.desc()).first()
+    
+    if max_uid_user and max_uid_user.uid.isdigit():
+        # 如果存在数字UID，则递增
+        next_uid = int(max_uid_user.uid) + 1
+    else:
+        # 如果没有数字UID，从10000000开始
+        next_uid = 10000000
+    
+    # 确保UID是8位数字
+    return str(next_uid).zfill(8)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """验证密码"""
@@ -137,15 +143,15 @@ def generate_username_from_mobile_or_email(mobile_or_email: str) -> str:
     
     # 如果是手机号
     if re.match(r'^1[3-9]\d{9}$', mobile_or_email):
-        return f"user_{mobile_or_email}"
+        return mobile_or_email
     
     # 如果是邮箱
     if re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', mobile_or_email):
         local_part = mobile_or_email.split('@')[0]
-        return f"user_{local_part}"
+        return local_part
     
-    # 其他情况
-    return f"user_{mobile_or_email}"
+    # 其他情况直接使用输入值
+    return mobile_or_email
 
 def update_user_login_info(db: Session, user: User, login_ip: str = None):
     """更新用户登录信息"""

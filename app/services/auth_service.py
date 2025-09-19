@@ -54,7 +54,7 @@ class AuthService:
             
             # 创建新用户
             user = User(
-                uid=generate_uid(),
+                uid=generate_uid(db),
                 username=username,
                 email=request.mobileOrEmail if '@' in request.mobileOrEmail else None,
                 mobile=request.mobileOrEmail if re.match(r'^1[3-9]\d{9}$', request.mobileOrEmail) else None,
@@ -128,7 +128,7 @@ class AuthService:
             # 为了演示，我们模拟一个简单的处理
             
             # 根据第三方类型生成用户名
-            username = f"user_{request.oauthType}_{request.oauthCode[:8]}"
+            username = f"{request.oauthType}_{request.oauthCode[:8]}"
             
             # 检查用户是否已存在
             user = db.query(User).filter(User.username == username).first()
@@ -137,7 +137,7 @@ class AuthService:
             if not user:
                 # 创建新用户
                 user = User(
-                    uid=generate_uid(),
+                    uid=generate_uid(db),
                     username=username,
                     nickname=f"{request.oauthType.title()}用户",
                     status=1,
