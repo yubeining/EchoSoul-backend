@@ -10,6 +10,8 @@ from passlib.context import CryptContext
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+import random
+import string
 
 from config.settings import settings
 from app.db import get_database_session
@@ -25,6 +27,15 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # HTTP Bearer认证
 security = HTTPBearer()
+
+def generate_uid() -> str:
+    """生成8位唯一用户标识符"""
+    while True:
+        # 生成8位随机字符串，包含数字和大写字母
+        uid = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        # 确保不以数字开头
+        if not uid[0].isdigit():
+            return uid
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """验证密码"""

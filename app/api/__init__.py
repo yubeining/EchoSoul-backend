@@ -1,29 +1,41 @@
 """
-API Package
-API routes and endpoints
+API Package - EchoSoul AI Platform
+统一管理所有API路由和端点
 """
 
 from fastapi import APIRouter
-from app.api import users, ai_requests, system_logs, database, stats, auth, security
+from app.api import ai_requests, system_logs, database, stats, auth, security, user_search
+from config.settings import settings
 
-# Create main API router
+# 创建主API路由器
 api_router = APIRouter()
 
-# Include all sub-routers
+# 注册核心API路由
 api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
 api_router.include_router(database.router, prefix="/db", tags=["database"])
-api_router.include_router(users.router, prefix="/users", tags=["users"])
+api_router.include_router(user_search.router, prefix="/users", tags=["user-search"])
 api_router.include_router(ai_requests.router, prefix="/ai-requests", tags=["ai-requests"])
 api_router.include_router(system_logs.router, prefix="/logs", tags=["system-logs"])
 api_router.include_router(stats.router, prefix="/stats", tags=["statistics"])
 api_router.include_router(security.router, prefix="/security", tags=["security"])
 
-# 启用storage模块
+# 注册存储API路由（可选）
 try:
     from app.api import storage
     api_router.include_router(storage.router, prefix="/storage", tags=["storage"])
     print("✅ Storage API router included")
 except Exception as e:
     print(f"⚠️ Failed to include storage router: {e}")
+
+# API健康检查端点
+@api_router.get("/health")
+async def api_health_check():
+    """API健康检查端点"""
+    return {
+        "status": "healthy",
+        "message": "EchoSoul AI Platform API is running",
+        "version": settings.APP_VERSION,
+        "cors_origins": settings.CORS_ORIGINS
+    }
 
 __all__ = ["api_router"]

@@ -9,17 +9,7 @@ from app.db import get_database_base
 
 Base = get_database_base()
 
-class User(Base):
-    """用户模型"""
-    __tablename__ = "users"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50), unique=True, index=True, nullable=False)
-    email = Column(String(100), unique=True, index=True, nullable=False)
-    full_name = Column(String(100), nullable=True)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+# User模型已移除，使用auth_users表中的AuthUser模型
 
 class AIRequest(Base):
     """AI请求记录模型"""

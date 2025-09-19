@@ -36,7 +36,11 @@ def initialize_databases():
 
 def get_database_session():
     """Get database session for dependency injection"""
-    return mysql_db.get_session()
+    session = mysql_db.get_session()
+    try:
+        yield session
+    finally:
+        session.close()
 
 def get_database_base():
     """Get database base class"""

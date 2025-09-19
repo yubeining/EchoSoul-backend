@@ -17,8 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.settings import settings
 from app.api import api_router
 from app.db import initialize_databases, mysql_db
-from app.middleware import SecurityMiddleware, create_rate_limit_middleware
-from app.core.security_monitor import security_monitor
+from app.middleware import create_rate_limit_middleware
 
 # Create FastAPI application
 app = FastAPI(
@@ -40,10 +39,7 @@ if settings.RATE_LIMIT_REDIS_URL:
         print(f"⚠️ Redis connection failed: {e}, using memory-based rate limiting")
         redis_client = None
 
-# Add security middleware (order matters!)
-# if settings.SECURITY_ENABLED:
-#     app.add_middleware(SecurityMiddleware)
-#     print("✅ Security middleware enabled")
+# Security middleware is currently disabled due to compatibility issues
 
 # Add rate limiting middleware
 if settings.RATE_LIMIT_ENABLED:
@@ -117,7 +113,7 @@ async def root():
                     <li><a href="/docs">Swagger UI Documentation</a></li>
                     <li><a href="/redoc">ReDoc Documentation</a></li>
                     <li><a href="/api/db/status">Database Status</a></li>
-                    <li><a href="/api/users">Users API</a></li>
+                    <li><a href="/api/auth">Auth API</a></li>
                     <li><a href="/api/ai-requests">AI Requests API</a></li>
                     <li><a href="/api/logs">System Logs API</a></li>
                     <li><a href="/api/stats">Statistics API</a></li>
