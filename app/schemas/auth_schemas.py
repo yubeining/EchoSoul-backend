@@ -7,13 +7,7 @@ from pydantic import BaseModel, EmailStr, validator
 from typing import Optional
 from datetime import datetime
 import re
-
-# 基础响应模式
-class BaseResponse(BaseModel):
-    """基础响应模式"""
-    code: int = 1
-    msg: str = "success"
-    data: Optional[dict] = None
+from .common_schemas import BaseResponse
 
 # 用户注册请求
 class UserRegisterRequest(BaseModel):

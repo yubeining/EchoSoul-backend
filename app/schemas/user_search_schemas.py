@@ -6,6 +6,7 @@ EchoSoul AI Platform User Search Schemas
 from pydantic import BaseModel, validator
 from typing import Optional, List
 from datetime import datetime
+from .common_schemas import BaseResponse, PaginationInfo
 
 # 用户搜索请求
 class UserSearchRequest(BaseModel):
@@ -77,13 +78,7 @@ class UserSearchResult(BaseModel):
         return v
 
 # 分页信息
-class PaginationInfo(BaseModel):
-    """分页信息"""
-    currentPage: int
-    totalPages: int
-    totalCount: int
-    hasNext: bool
-    hasPrev: bool
+# PaginationInfo 已移至 common_schemas.py
 
 # 用户搜索响应
 class UserSearchResponse(BaseModel):
@@ -97,11 +92,7 @@ class UserDetailResponse(BaseModel):
     user: UserSearchResult
 
 # 基础响应
-class BaseResponse(BaseModel):
-    """基础响应"""
-    code: int
-    msg: str
-    data: Optional[UserSearchResponse] = None
+# BaseResponse 已移至 common_schemas.py
 
 # 用户详情基础响应
 class UserDetailBaseResponse(BaseModel):

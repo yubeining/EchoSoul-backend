@@ -6,12 +6,7 @@ EchoSoul AI Platform Storage Schemas
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-
-class BaseResponse(BaseModel):
-    """基础响应模式"""
-    code: int = Field(1, description="响应码，1 代表成功，0 代表失败")
-    msg: Optional[str] = Field("success", description="提示信息")
-    data: Optional[Dict[str, Any]] = Field(None, description="返回的数据")
+from .common_schemas import BaseResponse
 
 class FileUploadData(BaseModel):
     """文件上传数据模式"""

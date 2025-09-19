@@ -78,6 +78,11 @@ uvicorn app.main:app --host 0.0.0.0 --port 8080
 
 ## 📚 API 文档
 
+详细的API文档请查看 `docs/` 目录：
+- [聊天系统API文档](docs/CHAT_API_DOCUMENTATION.md)
+- [聊天系统前端集成指南](docs/CHAT_FRONTEND_GUIDE.md)
+- [CORS配置文档](docs/CORS_CONFIGURATION.md)
+
 ### 核心 API 端点
 
 #### 🔐 认证相关
@@ -91,9 +96,15 @@ uvicorn app.main:app --host 0.0.0.0 --port 8080
 - `GET /api/users/search` - 用户搜索
 - `GET /api/users/profile/{uid}` - 获取用户详情
 
+#### 💬 聊天系统
+- `POST /api/chat/conversations/get-or-create` - 获取或创建会话
+- `GET /api/chat/conversations` - 获取会话列表
+- `POST /api/chat/messages` - 发送消息
+- `GET /api/chat/conversations/{id}/messages` - 获取消息列表
+
 #### 🗄️ 数据库管理
 - `GET /api/db/status` - 数据库状态
-- `GET /api/db/tables` - 数据库表信息
+- `GET /api/db/status/all` - 所有数据库状态
 
 #### 📊 系统监控
 - `GET /api/stats/overview` - 系统概览
@@ -102,8 +113,9 @@ uvicorn app.main:app --host 0.0.0.0 --port 8080
 
 #### 🗂️ 对象存储
 - `POST /api/storage/upload` - 文件上传
+- `POST /api/storage/upload/avatar` - 头像上传
 - `GET /api/storage/files` - 文件列表
-- `DELETE /api/storage/file/{object_name}` - 文件删除
+- `GET /api/storage/status` - 存储状态
 
 ### API 文档访问
 - **Swagger UI**: http://localhost:8080/docs

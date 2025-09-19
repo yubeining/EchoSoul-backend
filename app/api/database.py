@@ -5,7 +5,7 @@ Database status and management endpoints
 
 from fastapi import APIRouter
 from app.db import mysql_db, redis_cache, mongodb_db
-from app.schemas.pydantic_schemas import DatabaseStatusResponse
+from app.schemas.common_schemas import DatabaseStatusResponse
 
 router = APIRouter()
 
