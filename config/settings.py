@@ -19,7 +19,7 @@ class Settings:
     PORT = int(os.getenv("PORT", 8080))
     
     # CORS
-    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://echosoul.com,https://pcbzodaitkpj.sealosbja.site").split(",")
+    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://echosoul.com,https://pcbzodaitkpj.sealosbja.site,https://cedezmdpgixn.sealosbja.site").split(",")
     
     # Database
     DATABASE_TYPE = os.getenv("DATABASE_TYPE", "mysql")
