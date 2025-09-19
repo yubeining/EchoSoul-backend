@@ -18,6 +18,20 @@ from app.core.auth import (
     generate_username_from_mobile_or_email, update_user_login_info
 )
 
+def generate_next_uid(db: Session) -> str:
+    """生成下一个8位数字UID"""
+    # 获取当前最大的UID
+    max_uid_result = db.query(User.uid).filter(User.uid.isnot(None)).order_by(User.uid.desc()).first()
+    
+    if max_uid_result:
+        max_uid = int(max_uid_result[0])
+        next_uid = max_uid + 1
+    else:
+        # 如果没有现有UID，从10000000开始
+        next_uid = 10000000
+    
+    return str(next_uid)
+
 class AuthService:
     """认证服务类"""
     
@@ -52,8 +66,12 @@ class AuthService:
                 username = f"{original_username}_{counter}"
                 counter += 1
             
+            # 生成UID
+            uid = generate_next_uid(db)
+            
             # 创建新用户
             user = User(
+                uid=uid,
                 username=username,
                 email=request.mobileOrEmail if '@' in request.mobileOrEmail else None,
                 mobile=request.mobileOrEmail if re.match(r'^1[3-9]\d{9}$', request.mobileOrEmail) else None,
@@ -68,6 +86,7 @@ class AuthService:
             
             response = RegisterResponse(
                 userId=user.id,
+                uid=user.uid,
                 username=user.username,
                 nickname=user.nickname
             )
@@ -96,6 +115,7 @@ class AuthService:
             # 构建用户信息
             user_info = UserInfo(
                 id=user.id,
+                uid=user.uid,
                 username=user.username,
                 email=user.email,
                 mobile=user.mobile,
@@ -132,8 +152,12 @@ class AuthService:
             is_new_user = False
             
             if not user:
+                # 生成UID
+                uid = generate_next_uid(db)
+                
                 # 创建新用户
                 user = User(
+                    uid=uid,
                     username=username,
                     nickname=f"{request.oauthType.title()}用户",
                     status=1,
@@ -150,6 +174,7 @@ class AuthService:
             # 构建用户信息
             user_info = UserInfo(
                 id=user.id,
+                uid=user.uid,
                 username=user.username,
                 email=user.email,
                 mobile=user.mobile,
@@ -177,6 +202,7 @@ class AuthService:
         """获取用户信息"""
         return UserInfo(
             id=user.id,
+            uid=user.uid,
             username=user.username,
             email=user.email,
             mobile=user.mobile,

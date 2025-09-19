@@ -99,6 +99,7 @@ class OAuthLoginRequest(BaseModel):
 class UserInfo(BaseModel):
     """用户信息"""
     id: int
+    uid: str
     username: str
     email: Optional[str] = None
     mobile: Optional[str] = None
@@ -119,6 +120,7 @@ class LoginResponse(BaseModel):
 class RegisterResponse(BaseModel):
     """注册响应"""
     userId: int
+    uid: str
     username: str
     nickname: Optional[str] = None
 

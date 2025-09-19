@@ -14,6 +14,7 @@ class AuthUser(Base):
     __tablename__ = "auth_users"
     
     id = Column(BigInteger, primary_key=True, autoincrement=True, comment="用户ID")
+    uid = Column(String(8), nullable=False, unique=True, comment="用户唯一标识(8位数字)")
     username = Column(String(50), nullable=False, unique=True, comment="用户名")
     email = Column(String(100), unique=True, nullable=True, comment="邮箱")
     mobile = Column(String(20), unique=True, nullable=True, comment="手机号")
@@ -33,6 +34,7 @@ class AuthUser(Base):
         """转换为字典"""
         return {
             "id": self.id,
+            "uid": self.uid,
             "username": self.username,
             "email": self.email,
             "mobile": self.mobile,

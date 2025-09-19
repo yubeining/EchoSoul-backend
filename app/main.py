@@ -8,14 +8,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 import uvicorn
 import os
-
 import sys
-import os
+import redis
+
+# Add project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config.settings import settings
 from app.api import api_router
 from app.db import initialize_databases, mysql_db
+from app.middleware import SecurityMiddleware, create_rate_limit_middleware
+from app.core.security_monitor import security_monitor
 
 # Create FastAPI application
 app = FastAPI(
@@ -25,6 +28,28 @@ app = FastAPI(
     docs_url=settings.DOCS_URL,
     redoc_url=settings.REDOC_URL
 )
+
+# Initialize Redis client for rate limiting and security monitoring
+redis_client = None
+if settings.RATE_LIMIT_REDIS_URL:
+    try:
+        redis_client = redis.from_url(settings.RATE_LIMIT_REDIS_URL)
+        redis_client.ping()  # Test connection
+        print("✅ Redis connected for rate limiting and security monitoring")
+    except Exception as e:
+        print(f"⚠️ Redis connection failed: {e}, using memory-based rate limiting")
+        redis_client = None
+
+# Add security middleware (order matters!)
+# if settings.SECURITY_ENABLED:
+#     app.add_middleware(SecurityMiddleware)
+#     print("✅ Security middleware enabled")
+
+# Add rate limiting middleware
+if settings.RATE_LIMIT_ENABLED:
+    rate_limit_middleware = create_rate_limit_middleware(redis_client)
+    app.add_middleware(rate_limit_middleware)
+    print("✅ Rate limiting middleware enabled")
 
 # Add CORS middleware
 app.add_middleware(
@@ -58,6 +83,7 @@ async def startup_event():
         
     except Exception as e:
         print(f"❌ Application startup error: {str(e)}")
+        # 不要抛出异常，让应用继续运行
 
 # Include API routes
 app.include_router(api_router, prefix="/api")
