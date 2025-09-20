@@ -21,6 +21,9 @@ from app.api import api_router
 from app.db import initialize_databases, mysql_db
 from app.middleware import create_rate_limit_middleware
 
+# 导入所有模型以确保它们被注册到SQLAlchemy
+import app.models
+
 # Configure logging
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL.upper()))
 logger = logging.getLogger(__name__)

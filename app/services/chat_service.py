@@ -11,6 +11,7 @@ from datetime import datetime
 
 from app.models.chat_models import Conversation, Message
 from app.models.user_models import AuthUser
+from app.models.ai_character_models import AICharacter
 from app.schemas.chat_schemas import (
     GetOrCreateConversationRequest, SendMessageRequest,
     ConversationResponse, MessageResponse, MessageType
@@ -234,3 +235,136 @@ class ChatService:
                 Message.is_deleted == 0
             )
         ).count()
+    
+    @staticmethod
+    def send_ai_message(db: Session, conversation_id: str, user_message: str, user_id: int) -> Tuple[bool, str, Optional[MessageResponse]]:
+        """发送消息到AI角色并获取AI回复"""
+        try:
+            # 获取会话信息
+            conversation = db.query(Conversation).filter(
+                and_(
+                    Conversation.conversation_id == conversation_id,
+                    Conversation.status == 1,
+                    Conversation.conversation_type == 'user_ai'
+                )
+            ).first()
+            
+            if not conversation:
+                return False, "会话不存在", None
+            
+            # 检查用户是否有权限发送消息
+            if conversation.user1_id != user_id:
+                return False, "无权限发送消息", None
+            
+            # 获取AI角色信息
+            ai_character = db.query(AICharacter).filter(
+                and_(
+                    AICharacter.character_id == conversation.ai_character_id,
+                    AICharacter.status == 1
+                )
+            ).first()
+            
+            if not ai_character:
+                return False, "AI角色不存在", None
+            
+            # 1. 保存用户消息
+            user_message_id = str(uuid.uuid4())
+            user_message_obj = Message(
+                message_id=user_message_id,
+                conversation_id=conversation_id,
+                sender_id=user_id,
+                receiver_id=0,  # AI使用0作为ID
+                content=user_message,
+                message_type='text',
+                is_ai_message=False,
+                ai_character_id=None
+            )
+            
+            db.add(user_message_obj)
+            
+            # 2. 生成AI回复（这里可以集成真实的AI服务）
+            ai_reply = ChatService._generate_ai_reply(user_message, ai_character)
+            
+            # 3. 保存AI回复
+            ai_message_id = str(uuid.uuid4())
+            ai_message_obj = Message(
+                message_id=ai_message_id,
+                conversation_id=conversation_id,
+                sender_id=0,  # AI使用0作为ID
+                receiver_id=user_id,
+                content=ai_reply,
+                message_type='text',
+                is_ai_message=True,
+                ai_character_id=ai_character.character_id
+            )
+            
+            db.add(ai_message_obj)
+            
+            # 4. 更新会话的最后消息信息
+            conversation.last_message_id = ai_message_obj.id
+            conversation.last_message_time = datetime.utcnow()
+            
+            # 5. 增加AI角色使用次数
+            ai_character.usage_count += 1
+            
+            db.commit()
+            db.refresh(ai_message_obj)
+            
+            return True, "消息发送成功", MessageResponse.from_orm(ai_message_obj)
+            
+        except Exception as e:
+            db.rollback()
+            return False, f"发送消息失败: {str(e)}", None
+    
+    @staticmethod
+    def _generate_ai_reply(user_message: str, ai_character: AICharacter) -> str:
+        """生成AI回复（模拟AI回复逻辑）"""
+        # 这里可以集成真实的AI服务，如OpenAI、Claude等
+        # 目前使用简单的模拟回复
+        
+        # 根据角色的人设和说话风格生成回复
+        personality = ai_character.personality or "友好"
+        speaking_style = ai_character.speaking_style or "自然"
+        
+        # 简单的回复模板
+        replies = [
+            f"你好！我是{ai_character.nickname}，很高兴和你聊天！",
+            f"作为{ai_character.nickname}，我想说：{user_message} 这个话题很有趣呢！",
+            f"嗯，{user_message}... 让我想想，{ai_character.nickname}觉得这很有道理！",
+            f"哇，你提到了{user_message}！{ai_character.nickname}对此很感兴趣！",
+            f"作为{ai_character.nickname}，我的{personality}性格让我想说：{user_message} 确实值得思考！"
+        ]
+        
+        # 根据消息内容选择回复
+        import random
+        if "你好" in user_message or "hello" in user_message.lower():
+            return f"你好！我是{ai_character.nickname}，很高兴认识你！{ai_character.description or ''}"
+        elif "再见" in user_message or "bye" in user_message.lower():
+            return f"再见！{ai_character.nickname}期待下次和你聊天！"
+        else:
+            return random.choice(replies)
+    
+    @staticmethod
+    def get_ai_conversations(db: Session, current_user_id: int, page: int = 1, limit: int = 20) -> Tuple[bool, str, Optional[List[ConversationResponse]]]:
+        """获取用户的AI会话列表"""
+        try:
+            offset = (page - 1) * limit
+            
+            # 查询用户的AI会话
+            conversations = db.query(Conversation).filter(
+                and_(
+                    Conversation.user1_id == current_user_id,
+                    Conversation.conversation_type == 'user_ai',
+                    Conversation.status == 1
+                )
+            ).order_by(desc(Conversation.last_message_time)).offset(offset).limit(limit).all()
+            
+            # 转换为响应格式
+            conversation_responses = [
+                ConversationResponse.from_orm(conv) for conv in conversations
+            ]
+            
+            return True, "获取AI会话列表成功", conversation_responses
+            
+        except Exception as e:
+            return False, f"获取AI会话列表失败: {str(e)}", None

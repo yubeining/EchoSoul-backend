@@ -3,7 +3,7 @@ EchoSoul AI Platform Chat Models
 聊天系统相关的数据模型
 """
 
-from sqlalchemy import Column, BigInteger, String, DateTime, Integer, Text, Enum, ForeignKey
+from sqlalchemy import Column, BigInteger, String, DateTime, Integer, Text, Enum, ForeignKey, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db import get_database_base
@@ -19,6 +19,9 @@ class Conversation(Base):
     user1_id = Column(BigInteger, nullable=False, comment="用户1的ID")
     user2_id = Column(BigInteger, nullable=False, comment="用户2的ID")
     conversation_name = Column(String(100), nullable=True, comment="会话名称（可自定义，默认为对方昵称）")
+    conversation_type = Column(Enum('user_user', 'user_ai', name='conversation_type_enum'), 
+                              default='user_user', comment="会话类型")
+    ai_character_id = Column(String(32), nullable=True, comment="AI角色ID（当conversation_type为user_ai时使用）")
     last_message_id = Column(BigInteger, nullable=True, comment="最后一条消息ID")
     last_message_time = Column(DateTime, nullable=True, comment="最后消息时间")
     status = Column(Integer, default=1, comment="会话状态：1-正常，0-已删除")
@@ -38,6 +41,8 @@ class Conversation(Base):
             "user1_id": self.user1_id,
             "user2_id": self.user2_id,
             "conversation_name": self.conversation_name,
+            "conversation_type": self.conversation_type,
+            "ai_character_id": self.ai_character_id,
             "last_message_id": self.last_message_id,
             "last_message_time": self.last_message_time.isoformat() if self.last_message_time else None,
             "status": self.status,
@@ -57,6 +62,8 @@ class Message(Base):
     content = Column(Text, nullable=False, comment="消息内容")
     message_type = Column(Enum('text', 'image', 'voice', 'video', 'file', 'emoji', name='message_type_enum'), 
                          default='text', comment="消息类型")
+    is_ai_message = Column(Boolean, default=False, comment="是否为AI消息")
+    ai_character_id = Column(String(32), nullable=True, comment="AI角色ID（当is_ai_message为true时使用）")
     file_url = Column(String(500), nullable=True, comment="文件URL（图片、语音、视频、文件）")
     file_name = Column(String(255), nullable=True, comment="文件名")
     file_size = Column(BigInteger, nullable=True, comment="文件大小（字节）")
@@ -80,6 +87,8 @@ class Message(Base):
             "receiver_id": self.receiver_id,
             "content": self.content,
             "message_type": self.message_type,
+            "is_ai_message": self.is_ai_message,
+            "ai_character_id": self.ai_character_id,
             "file_url": self.file_url,
             "file_name": self.file_name,
             "file_size": self.file_size,

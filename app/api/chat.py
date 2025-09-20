@@ -85,6 +85,38 @@ async def get_user_conversations(
         data=response_data
     )
 
+@router.get("/conversations/ai", 
+            response_model=ConversationListBaseResponse,
+            summary="获取用户AI会话列表")
+async def get_ai_conversations(
+    page: int = Query(1, ge=1, description="页码"),
+    limit: int = Query(20, ge=1, le=100, description="每页数量"),
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_database_session)
+):
+    """获取用户的AI会话列表"""
+    success, message, data = ChatService.get_ai_conversations(
+        db, current_user.id, page, limit
+    )
+    
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+    
+    # 构建分页信息
+    total = len(data) if data else 0
+    response_data = ConversationListResponse(
+        conversations=data,
+        total=total,
+        page=page,
+        limit=limit
+    )
+    
+    return ConversationListBaseResponse(
+        code=1,
+        msg=message,
+        data=response_data
+    )
+
 @router.get("/conversations/{conversation_id}", 
             response_model=ConversationBaseResponse,
             summary="获取会话详情")
@@ -156,4 +188,27 @@ async def get_conversation_messages(
         code=1,
         msg=message,
         data=response_data
+    )
+
+@router.post("/messages/ai", 
+             response_model=SendMessageResponse,
+             summary="发送消息到AI角色")
+async def send_ai_message(
+    conversation_id: str = Query(..., description="会话ID"),
+    content: str = Query(..., description="消息内容"),
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_database_session)
+):
+    """发送消息到AI角色并获取AI回复"""
+    success, message, data = ChatService.send_ai_message(
+        db, conversation_id, content, current_user.id
+    )
+    
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+    
+    return SendMessageResponse(
+        code=1,
+        msg=message,
+        data=data
     )
