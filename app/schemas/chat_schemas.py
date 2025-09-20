@@ -129,3 +129,7 @@ class ConversationBaseResponse(ChatBaseResponse):
 class MessageListBaseResponse(ChatBaseResponse):
     """消息列表基础响应"""
     data: Optional[MessageListResponse] = None
+
+class MessageBaseResponse(ChatBaseResponse):
+    """单条消息基础响应"""
+    data: Optional[MessageResponse] = None

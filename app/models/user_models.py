@@ -43,6 +43,6 @@ class AuthUser(Base):
             "avatar": self.avatar,
             "intro": self.intro,
             "status": self.status,
-            "lastLoginTime": self.last_login_time.isoformat() if self.last_login_time else None,
-            "createTime": self.create_time.isoformat() if self.create_time else None
+            "lastLoginTime": self.last_login_time.isoformat() + "Z" if self.last_login_time else None,
+            "createTime": self.create_time.isoformat() + "Z" if self.create_time else None
         }

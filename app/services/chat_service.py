@@ -368,3 +368,84 @@ class ChatService:
             
         except Exception as e:
             return False, f"获取AI会话列表失败: {str(e)}", None
+    
+    @staticmethod
+    def get_message_by_id(
+        db: Session, 
+        current_user_id: int, 
+        message_id: str
+    ) -> Tuple[bool, str, Optional[MessageResponse]]:
+        """根据消息ID获取单条消息"""
+        try:
+            # 查询消息
+            message = db.query(Message).filter(
+                and_(
+                    Message.message_id == message_id,
+                    Message.is_deleted == 0
+                )
+            ).first()
+            
+            if not message:
+                return False, "消息不存在", None
+            
+            # 检查用户是否有权限访问此消息
+            # 通过会话验证用户权限
+            conversation = db.query(Conversation).filter(
+                and_(
+                    Conversation.conversation_id == message.conversation_id,
+                    Conversation.status == 1
+                )
+            ).first()
+            
+            if not conversation:
+                return False, "会话不存在", None
+            
+            # 检查用户是否参与此会话
+            if current_user_id not in [conversation.user1_id, conversation.user2_id]:
+                return False, "无权限访问此消息", None
+            
+            return True, "获取消息成功", MessageResponse.from_orm(message)
+            
+        except Exception as e:
+            return False, f"获取消息失败: {str(e)}", None
+    
+    @staticmethod
+    def get_message_by_id_in_conversation(
+        db: Session, 
+        current_user_id: int, 
+        conversation_id: str,
+        message_id: str
+    ) -> Tuple[bool, str, Optional[MessageResponse]]:
+        """根据会话ID和消息ID获取特定消息"""
+        try:
+            # 首先验证会话是否存在且用户有权限访问
+            conversation = db.query(Conversation).filter(
+                and_(
+                    Conversation.conversation_id == conversation_id,
+                    Conversation.status == 1
+                )
+            ).first()
+            
+            if not conversation:
+                return False, "会话不存在", None
+            
+            # 检查用户是否参与此会话
+            if current_user_id not in [conversation.user1_id, conversation.user2_id]:
+                return False, "无权限访问此会话", None
+            
+            # 查询消息
+            message = db.query(Message).filter(
+                and_(
+                    Message.message_id == message_id,
+                    Message.conversation_id == conversation_id,
+                    Message.is_deleted == 0
+                )
+            ).first()
+            
+            if not message:
+                return False, "消息不存在", None
+            
+            return True, "获取消息成功", MessageResponse.from_orm(message)
+            
+        except Exception as e:
+            return False, f"获取消息失败: {str(e)}", None

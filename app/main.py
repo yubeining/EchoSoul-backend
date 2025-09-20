@@ -133,6 +133,7 @@ async def root():
                     <li><a href="/api/auth">Auth API</a></li>
                     <li><a href="/api/users">User Search API</a></li>
                     <li><a href="/api/chat">Chat API</a></li>
+                    <li><a href="/api/llm">LLM Chat API</a></li>
                     <li><a href="/api/storage">Storage API</a></li>
                     <li><a href="/api/stats">Statistics API</a></li>
                 </ul>

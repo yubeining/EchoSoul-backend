@@ -105,8 +105,8 @@ class AuthService:
                 nickname=user.nickname,
                 avatar=user.avatar,
                 status=user.status,
-                lastLoginTime=user.last_login_time.isoformat() if user.last_login_time else None,
-                createTime=user.create_time.isoformat() if user.create_time else None
+                lastLoginTime=user.last_login_time.isoformat() + "Z" if user.last_login_time else None,
+                createTime=user.create_time.isoformat() + "Z" if user.create_time else None
             )
             
             response = LoginResponse(
@@ -158,8 +158,8 @@ class AuthService:
                 nickname=user.nickname,
                 avatar=user.avatar,
                 status=user.status,
-                lastLoginTime=user.last_login_time.isoformat() if user.last_login_time else None,
-                createTime=user.create_time.isoformat() if user.create_time else None
+                lastLoginTime=user.last_login_time.isoformat() + "Z" if user.last_login_time else None,
+                createTime=user.create_time.isoformat() + "Z" if user.create_time else None
             )
             
             response = LoginResponse(

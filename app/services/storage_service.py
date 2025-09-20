@@ -96,7 +96,7 @@ class ObjectStorageService:
                 "size": len(file_data),
                 "content_type": content_type,
                 "public_url": public_url,
-                "upload_time": datetime.utcnow().isoformat(),
+                "upload_time": datetime.utcnow().isoformat() + "Z",
                 "user_id": user_id
             }
             
@@ -157,7 +157,7 @@ class ObjectStorageService:
                 "object_name": object_name,
                 "size": stat.size,
                 "content_type": stat.content_type,
-                "last_modified": stat.last_modified.isoformat(),
+                "last_modified": stat.last_modified.isoformat() + "Z",
                 "etag": stat.etag,
                 "public_url": self.config.get_public_url(object_name)
             }
@@ -192,7 +192,7 @@ class ObjectStorageService:
                 file_info = {
                     "object_name": obj.object_name,
                     "size": obj.size,
-                    "last_modified": obj.last_modified.isoformat(),
+                    "last_modified": obj.last_modified.isoformat() + "Z",
                     "etag": obj.etag,
                     "public_url": self.config.get_public_url(obj.object_name)
                 }

@@ -136,8 +136,8 @@ class AICharacterService:
                     status=char.status,
                     usage_count=char.usage_count,
                     like_count=char.like_count,
-                    create_time=char.create_time.isoformat() if char.create_time else None,
-                    update_time=char.update_time.isoformat() if char.update_time else None
+                    create_time=char.create_time.isoformat() + "Z" if char.create_time else None,
+                    update_time=char.update_time.isoformat() + "Z" if char.update_time else None
                 )
                 character_list.append(character_info)
             
@@ -190,8 +190,8 @@ class AICharacterService:
                 status=character.status,
                 usage_count=character.usage_count,
                 like_count=character.like_count,
-                create_time=character.create_time.isoformat() if character.create_time else None,
-                update_time=character.update_time.isoformat() if character.update_time else None
+                create_time=character.create_time.isoformat() + "Z" if character.create_time else None,
+                update_time=character.update_time.isoformat() + "Z" if character.update_time else None
             )
             
             response = AICharacterDetailResponse(character=character_info)
@@ -396,8 +396,8 @@ class AICharacterService:
                 status=character.status,
                 usage_count=character.usage_count,
                 like_count=character.like_count,
-                create_time=character.create_time.isoformat() if character.create_time else None,
-                update_time=character.update_time.isoformat() if character.update_time else None
+                create_time=character.create_time.isoformat() + "Z" if character.create_time else None,
+                update_time=character.update_time.isoformat() + "Z" if character.update_time else None
             )
             
             response = CreateAIConversationResponse(

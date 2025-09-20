@@ -50,8 +50,8 @@ class AICharacter(Base):
             "status": self.status,
             "usage_count": self.usage_count,
             "like_count": self.like_count,
-            "create_time": self.create_time.isoformat() if self.create_time else None,
-            "update_time": self.update_time.isoformat() if self.update_time else None
+            "create_time": self.create_time.isoformat() + "Z" if self.create_time else None,
+            "update_time": self.update_time.isoformat() + "Z" if self.update_time else None
         }
 
 class UserAIRelation(Base):
@@ -75,5 +75,5 @@ class UserAIRelation(Base):
             "user_id": self.user_id,
             "character_id": self.character_id,
             "relation_type": self.relation_type,
-            "create_time": self.create_time.isoformat() if self.create_time else None
+            "create_time": self.create_time.isoformat() + "Z" if self.create_time else None
         }

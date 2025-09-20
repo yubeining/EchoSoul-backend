@@ -44,10 +44,10 @@ class Conversation(Base):
             "conversation_type": self.conversation_type,
             "ai_character_id": self.ai_character_id,
             "last_message_id": self.last_message_id,
-            "last_message_time": self.last_message_time.isoformat() if self.last_message_time else None,
+            "last_message_time": self.last_message_time.isoformat() + "Z" if self.last_message_time else None,
             "status": self.status,
-            "create_time": self.create_time.isoformat() if self.create_time else None,
-            "update_time": self.update_time.isoformat() if self.update_time else None
+            "create_time": self.create_time.isoformat() + "Z" if self.create_time else None,
+            "update_time": self.update_time.isoformat() + "Z" if self.update_time else None
         }
 
 class Message(Base):
@@ -94,6 +94,6 @@ class Message(Base):
             "file_size": self.file_size,
             "is_deleted": self.is_deleted,
             "reply_to_message_id": self.reply_to_message_id,
-            "create_time": self.create_time.isoformat() if self.create_time else None,
-            "update_time": self.update_time.isoformat() if self.update_time else None
+            "create_time": self.create_time.isoformat() + "Z" if self.create_time else None,
+            "update_time": self.update_time.isoformat() + "Z" if self.update_time else None
         }

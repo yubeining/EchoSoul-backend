@@ -15,7 +15,7 @@ from app.schemas.chat_schemas import (
     GetOrCreateConversationRequest, SendMessageRequest,
     GetOrCreateConversationResponse, SendMessageResponse,
     ConversationListBaseResponse, ConversationBaseResponse, MessageListBaseResponse,
-    ConversationListResponse, MessageListResponse
+    ConversationListResponse, MessageListResponse, MessageBaseResponse
 )
 
 router = APIRouter()
@@ -208,6 +208,51 @@ async def send_ai_message(
         raise HTTPException(status_code=400, detail=message)
     
     return SendMessageResponse(
+        code=1,
+        msg=message,
+        data=data
+    )
+
+@router.get("/messages/{message_id}", 
+            response_model=MessageBaseResponse,
+            summary="获取单条消息详情")
+async def get_message_detail(
+    message_id: str,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_database_session)
+):
+    """根据消息ID获取单条消息详情"""
+    success, message, data = ChatService.get_message_by_id(
+        db, current_user.id, message_id
+    )
+    
+    if not success:
+        raise HTTPException(status_code=404, detail=message)
+    
+    return MessageBaseResponse(
+        code=1,
+        msg=message,
+        data=data
+    )
+
+@router.get("/conversations/{conversation_id}/messages/{message_id}", 
+            response_model=MessageBaseResponse,
+            summary="获取会话中的特定消息")
+async def get_conversation_message_detail(
+    conversation_id: str,
+    message_id: str,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_database_session)
+):
+    """根据会话ID和消息ID获取特定消息"""
+    success, message, data = ChatService.get_message_by_id_in_conversation(
+        db, current_user.id, conversation_id, message_id
+    )
+    
+    if not success:
+        raise HTTPException(status_code=404, detail=message)
+    
+    return MessageBaseResponse(
         code=1,
         msg=message,
         data=data
