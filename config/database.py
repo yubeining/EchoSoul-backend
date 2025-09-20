@@ -10,11 +10,11 @@ class DatabaseConfig:
     """Database configuration class"""
     
     # MySQL Configuration
-    MYSQL_HOST = "echosoul-mysql-mysql.ns-7rdhhsv1.svc"
-    MYSQL_PORT = 3306
-    MYSQL_USER = "root"
-    MYSQL_PASSWORD = "kzmtbc6b"
-    MYSQL_DATABASE = "EchoSoul"
+    MYSQL_HOST = os.getenv("MYSQL_HOST", "echosoul-mysql-mysql.ns-7rdhhsv1.svc")
+    MYSQL_PORT = int(os.getenv("MYSQL_PORT", 3306))
+    MYSQL_USER = os.getenv("MYSQL_USER", "root")
+    MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "kzmtbc6b")
+    MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "EchoSoul")
     
     # Redis Configuration (for future use)
     REDIS_HOST = os.getenv("REDIS_HOST", "localhost")

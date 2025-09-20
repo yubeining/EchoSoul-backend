@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 from typing import Tuple
 import logging
+import os
 
 from app.db.base import DatabaseInterface
 from config.database import DatabaseConfig
@@ -28,15 +29,19 @@ class MySQLDatabase(DatabaseInterface):
     def connect(self) -> bool:
         """Connect to MySQL database"""
         try:
-            # Create database engine
+            # Create database engine with optimized connection pool
             self.engine = create_engine(
                 self.config["url"],
                 poolclass=QueuePool,
-                pool_size=10,
-                max_overflow=20,
+                pool_size=int(os.getenv("DB_POOL_SIZE", 10)),
+                max_overflow=int(os.getenv("DB_MAX_OVERFLOW", 20)),
                 pool_pre_ping=True,
-                pool_recycle=3600,
-                echo=False  # Set to True for SQL logging
+                pool_recycle=int(os.getenv("DB_POOL_RECYCLE", 3600)),
+                echo=os.getenv("DB_ECHO", "false").lower() == "true",
+                connect_args={
+                    "charset": "utf8mb4",
+                    "autocommit": False
+                }
             )
             
             # Create session factory

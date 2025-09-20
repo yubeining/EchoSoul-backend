@@ -23,24 +23,32 @@ class SimpleMessageHandler:
     async def handle_message(sender_id: int, message_data: dict) -> dict:
         """处理消息"""
         try:
-            message_type = message_data.get("type")
+            # 验证消息格式
+            if not isinstance(message_data, dict):
+                return {"success": False, "error": "消息格式无效"}
             
-            if message_type == "chat_message":
-                return await SimpleMessageHandler._handle_chat_message(sender_id, message_data)
-            elif message_type == "typing":
-                return await SimpleMessageHandler._handle_typing(sender_id, message_data)
-            elif message_type == "ping":
-                return await SimpleMessageHandler._handle_ping(sender_id, message_data)
-            elif message_type == "get_online_status":
-                return await SimpleMessageHandler._handle_get_online_status(sender_id, message_data)
-            elif message_type == "get_history":
-                return await SimpleMessageHandler._handle_get_history(sender_id, message_data)
+            message_type = message_data.get("type")
+            if not message_type:
+                return {"success": False, "error": "缺少消息类型"}
+            
+            # 使用字典映射提高性能
+            handlers = {
+                "chat_message": SimpleMessageHandler._handle_chat_message,
+                "typing": SimpleMessageHandler._handle_typing,
+                "ping": SimpleMessageHandler._handle_ping,
+                "get_online_status": SimpleMessageHandler._handle_get_online_status,
+                "get_history": SimpleMessageHandler._handle_get_history
+            }
+            
+            handler = handlers.get(message_type)
+            if handler:
+                return await handler(sender_id, message_data)
             else:
                 return {"success": False, "error": f"未知消息类型: {message_type}"}
                 
         except Exception as e:
-            logger.error(f"处理消息失败: {e}")
-            return {"success": False, "error": str(e)}
+            logger.error(f"处理消息失败 (用户ID: {sender_id}): {e}", exc_info=True)
+            return {"success": False, "error": "服务器内部错误"}
     
     @staticmethod
     async def _handle_chat_message(sender_id: int, message_data: dict) -> dict:
