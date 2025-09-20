@@ -5,7 +5,6 @@ Database initialization and management
 
 from app.db.mysql import mysql_db
 from app.db.redis import redis_cache
-from app.db.mongodb import mongodb_db
 from config.settings import settings
 
 def initialize_databases():
@@ -25,12 +24,7 @@ def initialize_databases():
         else:
             results["redis"] = {"status": "failed", "message": "Redis connection failed"}
     
-    # Initialize MongoDB (if configured)
-    if settings.DATABASE_TYPE == "mongodb" or settings.DEBUG:
-        if mongodb_db.connect():
-            results["mongodb"] = {"status": "connected", "message": "MongoDB connected successfully"}
-        else:
-            results["mongodb"] = {"status": "failed", "message": "MongoDB connection failed"}
+    # MongoDB support removed - using MySQL and Redis only
     
     return results
 
@@ -50,7 +44,6 @@ def get_database_base():
 __all__ = [
     "mysql_db",
     "redis_cache", 
-    "mongodb_db",
     "initialize_databases",
     "get_database_session",
     "get_database_base"

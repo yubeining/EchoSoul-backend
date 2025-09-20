@@ -236,8 +236,7 @@ class DatabaseConstants:
     # 数据库类型
     DATABASE_TYPES = {
         "mysql": "MySQL",
-        "redis": "Redis", 
-        "mongodb": "MongoDB"
+        "redis": "Redis"
     }
     
     # 连接池配置

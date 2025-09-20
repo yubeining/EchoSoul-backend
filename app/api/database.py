@@ -4,7 +4,7 @@ Database status and management endpoints
 """
 
 from fastapi import APIRouter
-from app.db import mysql_db, redis_cache, mongodb_db
+from app.db import mysql_db, redis_cache
 from app.schemas.common_schemas import DatabaseStatusResponse
 
 router = APIRouter()
@@ -40,12 +40,6 @@ async def all_databases_status():
         "type": "cache"
     }
     
-    # MongoDB status
-    mongodb_connected, mongodb_message = mongodb_db.test_connection()
-    results["mongodb"] = {
-        "connected": mongodb_connected,
-        "message": mongodb_message,
-        "type": "document"
-    }
+    # MongoDB support removed - using MySQL and Redis only
     
     return results

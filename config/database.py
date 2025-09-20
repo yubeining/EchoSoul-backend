@@ -22,12 +22,7 @@ class DatabaseConfig:
     REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
     REDIS_DB = int(os.getenv("REDIS_DB", 0))
     
-    # MongoDB Configuration (for future use)
-    MONGODB_HOST = os.getenv("MONGODB_HOST", "localhost")
-    MONGODB_PORT = int(os.getenv("MONGODB_PORT", 27017))
-    MONGODB_USER = os.getenv("MONGODB_USER", None)
-    MONGODB_PASSWORD = os.getenv("MONGODB_PASSWORD", None)
-    MONGODB_DATABASE = os.getenv("MONGODB_DATABASE", "echosoul")
+    # MongoDB support removed - using MySQL and Redis only
     
     @classmethod
     def get_mysql_url(cls) -> str:
@@ -45,11 +40,6 @@ class DatabaseConfig:
         auth = f":{cls.REDIS_PASSWORD}@" if cls.REDIS_PASSWORD else ""
         return f"redis://{auth}{cls.REDIS_HOST}:{cls.REDIS_PORT}/{cls.REDIS_DB}"
     
-    @classmethod
-    def get_mongodb_url(cls) -> str:
-        """Get MongoDB connection URL"""
-        auth = f"{cls.MONGODB_USER}:{cls.MONGODB_PASSWORD}@" if cls.MONGODB_USER else ""
-        return f"mongodb://{auth}{cls.MONGODB_HOST}:{cls.MONGODB_PORT}/{cls.MONGODB_DATABASE}"
     
     @classmethod
     def get_database_config(cls, db_type: str = "mysql") -> Dict[str, Any]:
@@ -71,13 +61,5 @@ class DatabaseConfig:
                 "password": cls.REDIS_PASSWORD,
                 "db": cls.REDIS_DB
             },
-            "mongodb": {
-                "url": cls.get_mongodb_url(),
-                "host": cls.MONGODB_HOST,
-                "port": cls.MONGODB_PORT,
-                "user": cls.MONGODB_USER,
-                "password": cls.MONGODB_PASSWORD,
-                "database": cls.MONGODB_DATABASE
-            }
         }
         return configs.get(db_type, configs["mysql"])
