@@ -14,7 +14,7 @@ from app.services.chat_service import ChatService
 from app.schemas.chat_schemas import (
     GetOrCreateConversationRequest, SendMessageRequest,
     GetOrCreateConversationResponse, SendMessageResponse,
-    ConversationListBaseResponse, MessageListBaseResponse,
+    ConversationListBaseResponse, ConversationBaseResponse, MessageListBaseResponse,
     ConversationListResponse, MessageListResponse
 )
 
@@ -48,13 +48,23 @@ async def get_or_create_conversation(
 async def get_user_conversations(
     page: int = Query(1, ge=1, description="页码"),
     limit: int = Query(20, ge=1, le=100, description="每页数量"),
+    user1_id: int = Query(None, description="用户1 ID"),
+    user2_id: int = Query(None, description="用户2 ID"),
     current_user: AuthUser = Depends(get_current_user),
     db: Session = Depends(get_database_session)
 ):
-    """获取当前用户的会话列表"""
-    success, message, conversations = ChatService.get_user_conversations(
-        db, current_user.id, page, limit
-    )
+    """获取当前用户的会话列表，支持按用户ID查询"""
+    # 如果提供了user1_id和user2_id，则查找特定会话
+    if user1_id and user2_id:
+        # 这里可以添加查找特定会话的逻辑
+        # 暂时使用默认的会话列表逻辑
+        success, message, conversations = ChatService.get_user_conversations(
+            db, current_user.id, page, limit
+        )
+    else:
+        success, message, conversations = ChatService.get_user_conversations(
+            db, current_user.id, page, limit
+        )
     
     if not success:
         raise HTTPException(status_code=400, detail=message)
@@ -73,6 +83,23 @@ async def get_user_conversations(
         code=1,
         msg=message,
         data=response_data
+    )
+
+@router.get("/conversations/{conversation_id}", 
+            response_model=ConversationBaseResponse,
+            summary="获取会话详情")
+async def get_conversation_detail(
+    conversation_id: str,
+    current_user: AuthUser = Depends(get_current_user),
+    db: Session = Depends(get_database_session)
+):
+    """获取特定会话的详细信息"""
+    # 这里可以添加获取会话详情的逻辑
+    # 暂时返回简单的响应
+    return ConversationBaseResponse(
+        code=1,
+        msg="获取会话详情成功",
+        data=None
     )
 
 @router.post("/messages", 

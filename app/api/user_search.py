@@ -108,6 +108,49 @@ async def get_user_profile(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取用户信息失败: {str(e)}")
 
+@router.get("/{userId}", response_model=UserDetailBaseResponse)
+async def get_user_by_id(
+    userId: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_database_session)
+):
+    """
+    根据用户ID获取用户详细信息
+    
+    - **userId**: 用户ID
+    - **认证**: 需要Bearer Token认证
+    """
+    try:
+        user = db.query(User).filter(User.id == userId).first()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        # 构建用户信息响应
+        user_result = UserSearchResult(
+            id=user.id,
+            uid=user.uid,
+            username=user.username,
+            nickname=user.nickname,
+            email=user.email,
+            mobile=user.mobile,
+            avatar_url=user.avatar,
+            intro=user.intro,
+            last_active_at=user.last_login_time,
+            create_time=user.create_time
+        )
+        
+        return UserDetailBaseResponse(
+            code=1,
+            msg="获取用户详情成功",
+            data=user_result
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取用户详情失败: {str(e)}")
+
 @router.get("/profile/username/{username}", response_model=UserDetailBaseResponse)
 async def get_user_profile_by_username(
     username: str,

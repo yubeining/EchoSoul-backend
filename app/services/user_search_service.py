@@ -10,8 +10,9 @@ import math
 
 from app.models.user_models import AuthUser as User
 from app.schemas.user_search_schemas import (
-    UserSearchRequest, UserSearchResponse, UserSearchResult, PaginationInfo
+    UserSearchRequest, UserSearchResponse, UserSearchResult
 )
+from app.schemas.common_schemas import PaginationInfo
 
 class UserSearchService:
     """用户搜索服务类"""
@@ -81,11 +82,11 @@ class UserSearchService:
             total_pages = math.ceil(total_count / limit) if total_count > 0 else 1
             
             pagination = PaginationInfo(
-                currentPage=page,
-                totalPages=total_pages,
-                totalCount=total_count,
-                hasNext=page < total_pages,
-                hasPrev=page > 1
+                current_page=page,
+                total_pages=total_pages,
+                total_count=total_count,
+                has_next=page < total_pages,
+                has_prev=page > 1
             )
             
             # 构建响应

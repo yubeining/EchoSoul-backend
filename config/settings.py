@@ -46,14 +46,13 @@ class Settings:
     CORS_ALLOW_CREDENTIALS = True
     CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     CORS_ALLOW_HEADERS = [
-        "Accept",
-        "Accept-Language", 
-        "Content-Language",
         "Content-Type",
-        "Authorization",
+        "Authorization", 
         "X-Requested-With",
-        "X-CSRF-Token"
+        "Accept",
+        "Origin"
     ]
+    CORS_MAX_AGE = 86400
     
     # Logging
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
