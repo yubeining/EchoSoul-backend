@@ -173,15 +173,15 @@ async def unfavorite_character(
         data=data
     )
 
-@router.post("/conversations/ai", 
+@router.post("/conversations/ai",
              response_model=CreateAIConversationBaseResponse,
-             summary="创建用户-AI会话")
+             summary="获取或创建用户-AI会话")
 async def create_ai_conversation(
     request: CreateAIConversationRequest,
     current_user: AuthUser = Depends(get_current_user),
     db: Session = Depends(get_database_session)
 ):
-    """创建用户-AI会话"""
+    """获取或创建用户-AI会话"""
     success, message, data = AICharacterService.create_ai_conversation(
         db, request, current_user.id
     )

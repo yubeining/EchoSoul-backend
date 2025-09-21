@@ -1,5 +1,14 @@
 # EchoSoul AI Platform Backend
 
+## 📢 最新更新
+
+### 🆕 AI会话接口升级 (2025-09-21)
+- **用户-AI会话创建接口** 已升级为 **get-or-create** 模式
+- **避免重复创建**：同一个用户与同一个AI角色只会有一个会话
+- **保持连续性**：每次调用都返回相同的 `conversation_id`
+- **智能判断**：自动识别是创建新会话还是返回现有会话
+- **详情请见**：[API变更通知](./API_CHANGELOG.md) | [前端通知](./FRONTEND_API_UPDATE.md)
+
 ## 🚀 项目概述
 
 EchoSoul AI Platform 是一个基于 FastAPI 构建的现代化 AI 平台后端服务，提供用户认证、用户搜索、聊天系统、对象存储等核心功能。

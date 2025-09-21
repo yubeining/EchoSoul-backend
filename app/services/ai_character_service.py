@@ -13,6 +13,7 @@ from datetime import datetime
 
 from app.models.ai_character_models import AICharacter, UserAIRelation
 from app.models.user_models import AuthUser
+from app.models.chat_models import Conversation
 from app.schemas.ai_character_schemas import (
     AICharacterCreateRequest, AICharacterUpdateRequest, CreateAIConversationRequest,
     AICharacterInfo, AICharacterListResponse, AICharacterDetailResponse,
@@ -344,7 +345,7 @@ class AICharacterService:
     
     @staticmethod
     def create_ai_conversation(db: Session, request: CreateAIConversationRequest, user_id: int) -> Tuple[bool, str, Optional[CreateAIConversationResponse]]:
-        """创建用户-AI会话"""
+        """获取或创建用户-AI会话"""
         try:
             # 检查AI角色是否存在
             character = db.query(AICharacter).filter(
@@ -353,17 +354,54 @@ class AICharacterService:
                     AICharacter.status == 1
                 )
             ).first()
-            
+
             if not character:
                 return False, "AI角色不存在", None
-            
-            # 生成会话ID
+
+            # 查找现有会话
+            conversation = db.query(Conversation).filter(
+                and_(
+                    Conversation.user1_id == user_id,
+                    Conversation.user2_id == 0,  # AI角色使用0作为ID
+                    Conversation.conversation_type == 'user_ai',
+                    Conversation.ai_character_id == request.character_id,
+                    Conversation.status == 1
+                )
+            ).first()
+
+            if conversation:
+                # 返回现有会话
+                character_info = AICharacterInfo(
+                    id=character.id,
+                    character_id=character.character_id,
+                    name=character.name,
+                    nickname=character.nickname,
+                    avatar=character.avatar,
+                    description=character.description,
+                    personality=character.personality,
+                    background_story=character.background_story,
+                    speaking_style=character.speaking_style,
+                    creator_id=character.creator_id,
+                    is_public=character.is_public,
+                    status=character.status,
+                    usage_count=character.usage_count,
+                    like_count=character.like_count,
+                    create_time=character.create_time.isoformat() + "Z" if character.create_time else None,
+                    update_time=character.update_time.isoformat() + "Z" if character.update_time else None
+                )
+
+                response = CreateAIConversationResponse(
+                    conversation_id=conversation.conversation_id,
+                    character_info=character_info,
+                    message="获取会话成功"
+                )
+
+                return True, "获取会话成功", response
+
+            # 创建新会话
             conversation_id = str(uuid.uuid4())
-            
-            # 创建会话（这里需要导入Conversation模型）
-            from app.models.chat_models import Conversation
-            
-            conversation = Conversation(
+
+            new_conversation = Conversation(
                 conversation_id=conversation_id,
                 user1_id=user_id,
                 user2_id=0,  # AI角色使用0作为ID
@@ -371,15 +409,15 @@ class AICharacterService:
                 conversation_type='user_ai',
                 ai_character_id=request.character_id
             )
-            
-            db.add(conversation)
-            
+
+            db.add(new_conversation)
+
             # 增加使用次数
             character.usage_count += 1
-            
+
             db.commit()
-            db.refresh(conversation)
-            
+            db.refresh(new_conversation)
+
             # 构建角色信息
             character_info = AICharacterInfo(
                 id=character.id,
@@ -399,15 +437,15 @@ class AICharacterService:
                 create_time=character.create_time.isoformat() + "Z" if character.create_time else None,
                 update_time=character.update_time.isoformat() + "Z" if character.update_time else None
             )
-            
+
             response = CreateAIConversationResponse(
                 conversation_id=conversation_id,
                 character_info=character_info,
                 message="会话创建成功"
             )
-            
+
             return True, "创建成功", response
-            
+
         except Exception as e:
             db.rollback()
-            return False, f"创建失败: {str(e)}", None
+            return False, f"操作失败: {str(e)}", None
