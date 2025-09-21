@@ -154,6 +154,7 @@ class ChatService:
             )
             
             db.add(new_message)
+            db.flush()  # 刷新以获取消息ID，但不提交事务
             
             # 更新会话的最后消息信息
             conversation.last_message_id = new_message.id
@@ -281,6 +282,7 @@ class ChatService:
             )
             
             db.add(user_message_obj)
+            db.flush()  # 刷新以获取用户消息ID
             
             # 2. 生成AI回复（这里可以集成真实的AI服务）
             ai_reply = ChatService._generate_ai_reply(user_message, ai_character)
@@ -299,6 +301,7 @@ class ChatService:
             )
             
             db.add(ai_message_obj)
+            db.flush()  # 刷新以获取AI消息ID
             
             # 4. 更新会话的最后消息信息
             conversation.last_message_id = ai_message_obj.id
