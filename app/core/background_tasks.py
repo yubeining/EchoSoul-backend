@@ -8,8 +8,9 @@ import logging
 from datetime import datetime
 from typing import Dict, Any
 
-from app.websocket.ai_manager import ai_manager
-from app.websocket.simple_manager import simple_manager
+# 延迟导入以避免循环导入
+# from app.websocket.ai_manager import ai_manager
+# from app.websocket.simple_manager import simple_manager
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,10 @@ class BackgroundTaskManager:
         """连接清理任务"""
         while self.running:
             try:
+                # 延迟导入以避免循环导入
+                from app.websocket.ai_manager import ai_manager
+                from app.websocket.simple_manager import simple_manager
+                
                 # 清理AI对话非活跃连接
                 await ai_manager.cleanup_inactive_connections(timeout_minutes=30)
                 
@@ -85,6 +90,10 @@ class BackgroundTaskManager:
         """健康检查任务"""
         while self.running:
             try:
+                # 延迟导入以避免循环导入
+                from app.websocket.ai_manager import ai_manager
+                from app.websocket.simple_manager import simple_manager
+                
                 # 检查AI对话连接健康状态
                 await ai_manager.health_check_connections()
                 
@@ -104,6 +113,10 @@ class BackgroundTaskManager:
         """统计报告任务"""
         while self.running:
             try:
+                # 延迟导入以避免循环导入
+                from app.websocket.ai_manager import ai_manager
+                from app.websocket.simple_manager import simple_manager
+                
                 # 获取AI对话统计
                 ai_stats = ai_manager.get_connection_stats()
                 

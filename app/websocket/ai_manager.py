@@ -11,6 +11,8 @@ from fastapi import WebSocket
 from datetime import datetime
 import uuid
 
+from app.core.logging_manager import log_info, log_operation_start, log_operation_success, log_operation_error
+
 logger = logging.getLogger(__name__)
 
 class AIConnectionManager:
@@ -47,7 +49,7 @@ class AIConnectionManager:
             self.stats["active_connections"] = len(self.connections)
             self.stats["total_connections"] += 1
             
-            logger.info(f"用户 {user_id} 已连接到AI对话")
+            log_info(f"用户已连接到AI对话", user_id=user_id)
             
             # 发送连接成功消息
             await self.send_to_user(user_id, {
@@ -59,7 +61,7 @@ class AIConnectionManager:
             return True
             
         except Exception as e:
-            logger.error(f"AI对话连接失败: {e}")
+            log_operation_error("AI对话连接", str(e), user_id=user_id)
             return False
     
     async def disconnect(self, user_id: int):
@@ -79,7 +81,7 @@ class AIConnectionManager:
                 
                 # 尝试关闭WebSocket连接
                 websocket = self.connections[user_id]
-                if websocket:
+                if websocket and not websocket.client_state.disconnected:
                     try:
                         await websocket.close()
                     except Exception as e:
@@ -93,10 +95,10 @@ class AIConnectionManager:
                     del self.user_ai_sessions[user_id]
                 
                 self.stats["active_connections"] = len(self.connections)
-                logger.info(f"用户 {user_id} 已断开AI对话连接")
+                log_info(f"用户已断开AI对话连接", user_id=user_id)
                 
             except Exception as e:
-                logger.error(f"断开连接时发生错误: {e}")
+                log_operation_error("断开连接", str(e), user_id=user_id)
                 # 强制清理
                 self.connections.pop(user_id, None)
                 self.user_activity.pop(user_id, None)
@@ -115,7 +117,7 @@ class AIConnectionManager:
             self.user_activity[user_id] = datetime.utcnow()
             return True
         except Exception as e:
-            logger.error(f"发送消息失败 (用户ID: {user_id}): {e}")
+            log_operation_error("发送消息", str(e), user_id=user_id)
             await self.disconnect(user_id)
             return False
     
@@ -228,7 +230,7 @@ class AIConnectionManager:
                 inactive_users.append(user_id)
         
         for user_id in inactive_users:
-            logger.info(f"清理非活跃连接: 用户 {user_id}")
+            log_info(f"清理非活跃连接", user_id=user_id)
             await self.disconnect(user_id)
     
     async def health_check_connections(self):
@@ -237,18 +239,23 @@ class AIConnectionManager:
         
         for user_id, websocket in self.connections.items():
             try:
+                # 检查连接状态
+                if websocket.client_state.disconnected:
+                    dead_connections.append(user_id)
+                    continue
+                
                 # 发送ping消息检查连接
                 await websocket.send_text(json.dumps({
                     "type": "ping",
                     "timestamp": datetime.utcnow().isoformat() + "Z"
                 }))
             except Exception as e:
-                logger.warning(f"连接健康检查失败 (用户ID: {user_id}): {e}")
+                log_operation_error("连接健康检查", str(e), user_id=user_id)
                 dead_connections.append(user_id)
         
         # 清理死连接
         for user_id in dead_connections:
-            logger.info(f"清理死连接: 用户 {user_id}")
+            log_info(f"清理死连接", user_id=user_id)
             await self.disconnect(user_id)
     
     def get_connection_stats(self) -> dict:

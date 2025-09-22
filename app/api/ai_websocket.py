@@ -13,6 +13,8 @@ from app.websocket.ai_manager import ai_manager
 from app.websocket.ai_handler import AIMessageHandler
 from app.core.auth import get_current_user
 from app.models.user_models import AuthUser
+from app.core.logging_manager import log_info, log_operation_error
+from app.core.response_handler import success_response
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -74,31 +76,30 @@ async def ai_chat_websocket_endpoint(
     
     except WebSocketDisconnect:
         await ai_manager.disconnect(user_id)
-        logger.info(f"用户 {user_id} 断开AI对话连接")
+        log_info(f"用户断开AI对话连接", user_id=user_id)
     except Exception as e:
-        logger.error(f"AI对话WebSocket错误: {e}")
+        log_operation_error("AI对话WebSocket", str(e), user_id=user_id)
         await ai_manager.disconnect(user_id)
 
 @router.get("/ai-chat/stats")
 async def get_ai_chat_stats():
     """获取AI对话统计信息"""
-    return {
-        "code": 1,
-        "msg": "获取AI对话统计信息成功",
-        "data": ai_manager.get_stats()
-    }
+    return success_response(
+        data=ai_manager.get_stats(),
+        message="获取AI对话统计信息成功"
+    )
 
 @router.get("/ai-chat/online")
 async def get_ai_chat_online_users():
     """获取AI对话在线用户"""
-    return {
-        "code": 1,
-        "msg": "获取AI对话在线用户成功",
-        "data": {
-            "online_users": ai_manager.get_online_users(),
-            "count": len(ai_manager.get_online_users())
-        }
-    }
+    online_users = ai_manager.get_online_users()
+    return success_response(
+        data={
+            "online_users": online_users,
+            "count": len(online_users)
+        },
+        message="获取AI对话在线用户成功"
+    )
 
 @router.get("/ai-chat/user/{user_id}/status")
 async def get_user_ai_chat_status(user_id: int):
@@ -106,29 +107,27 @@ async def get_user_ai_chat_status(user_id: int):
     is_online = ai_manager.is_user_online(user_id)
     ai_session = ai_manager.get_user_ai_session(user_id)
     
-    return {
-        "code": 1,
-        "msg": "获取用户AI对话状态成功",
-        "data": {
+    return success_response(
+        data={
             "user_id": user_id,
             "is_online": is_online,
             "ai_session": ai_session,
             "has_active_session": ai_session is not None
-        }
-    }
+        },
+        message="获取用户AI对话状态成功"
+    )
 
 @router.post("/ai-chat/user/{user_id}/disconnect")
 async def disconnect_user_ai_chat(user_id: int):
     """强制断开指定用户的AI对话连接"""
     try:
         await ai_manager.disconnect(user_id)
-        return {
-            "code": 1,
-            "msg": "用户AI对话连接已断开",
-            "data": {"user_id": user_id}
-        }
+        return success_response(
+            data={"user_id": user_id},
+            message="用户AI对话连接已断开"
+        )
     except Exception as e:
-        logger.error(f"断开用户AI对话连接失败: {e}")
+        log_operation_error("断开用户AI对话连接", str(e), user_id=user_id)
         raise HTTPException(status_code=500, detail="断开连接失败")
 
 

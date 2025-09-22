@@ -126,12 +126,17 @@ async def get_conversation_detail(
     db: Session = Depends(get_database_session)
 ):
     """获取特定会话的详细信息"""
-    # 这里可以添加获取会话详情的逻辑
-    # 暂时返回简单的响应
+    success, message, data = ChatService.get_conversation_by_id(
+        db, conversation_id, current_user.id
+    )
+    
+    if not success:
+        raise HTTPException(status_code=404, detail=message)
+    
     return ConversationBaseResponse(
         code=1,
-        msg="获取会话详情成功",
-        data=None
+        msg=message,
+        data=data
     )
 
 @router.post("/messages", 

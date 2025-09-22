@@ -336,6 +336,34 @@ class ChatService:
         ).count()
     
     @staticmethod
+    def get_conversation_by_id(
+        db: Session, 
+        conversation_id: str, 
+        current_user_id: int
+    ) -> Tuple[bool, str, Optional[ConversationResponse]]:
+        """根据会话ID获取会话详情"""
+        try:
+            # 查询会话
+            conversation = db.query(Conversation).filter(
+                and_(
+                    Conversation.conversation_id == conversation_id,
+                    Conversation.status == 1,
+                    or_(
+                        Conversation.user1_id == current_user_id,
+                        Conversation.user2_id == current_user_id
+                    )
+                )
+            ).first()
+            
+            if not conversation:
+                return False, "会话不存在或无权限访问", None
+            
+            return True, "获取会话详情成功", ConversationResponse.from_orm(conversation)
+            
+        except Exception as e:
+            return False, f"获取会话详情失败: {str(e)}", None
+    
+    @staticmethod
     def send_ai_message(db: Session, conversation_id: str, user_message: str, user_id: int) -> Tuple[bool, str, Optional[MessageResponse]]:
         """发送消息到AI角色并获取AI回复"""
         try:
@@ -440,7 +468,7 @@ class ChatService:
                 # 创建新的事件循环来运行异步函数
                 ai_reply = asyncio.run(
                     LLMService.chat_with_character(
-                        user_message=request.content,
+                        user_message=user_message,
                         character_name=ai_character.nickname,
                         character_personality=ai_character.personality,
                         conversation_history=conversation_history,
