@@ -1,0 +1,201 @@
+"""
+AI对话WebSocket连接管理器
+专门处理用户与AI角色的实时对话连接
+"""
+
+import json
+import asyncio
+import logging
+from typing import Dict, Optional, Set, List
+from fastapi import WebSocket
+from datetime import datetime
+import uuid
+
+logger = logging.getLogger(__name__)
+
+class AIConnectionManager:
+    """AI对话连接管理器"""
+    
+    def __init__(self):
+        # 用户ID -> WebSocket连接
+        self.connections: Dict[int, WebSocket] = {}
+        # 用户ID -> 当前AI角色ID
+        self.user_ai_sessions: Dict[int, str] = {}
+        # 用户ID -> 最后活跃时间
+        self.user_activity: Dict[int, datetime] = {}
+        # 正在处理的AI回复任务
+        self.ai_processing_tasks: Dict[int, asyncio.Task] = {}
+        # 消息统计
+        self.stats = {
+            "total_connections": 0,
+            "active_connections": 0,
+            "total_messages": 0,
+            "ai_replies": 0
+        }
+    
+    async def connect(self, websocket: WebSocket, user_id: int) -> bool:
+        """建立AI对话连接"""
+        try:
+            await websocket.accept()
+            
+            # 如果用户已有连接，先关闭旧连接
+            if user_id in self.connections:
+                await self.disconnect(user_id)
+            
+            self.connections[user_id] = websocket
+            self.user_activity[user_id] = datetime.utcnow()
+            self.stats["active_connections"] = len(self.connections)
+            self.stats["total_connections"] += 1
+            
+            logger.info(f"用户 {user_id} 已连接到AI对话")
+            
+            # 发送连接成功消息
+            await self.send_to_user(user_id, {
+                "type": "connection_established",
+                "message": "AI对话连接已建立",
+                "timestamp": datetime.utcnow().isoformat() + "Z"
+            })
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"AI对话连接失败: {e}")
+            return False
+    
+    async def disconnect(self, user_id: int):
+        """断开AI对话连接"""
+        if user_id in self.connections:
+            # 取消正在处理的AI任务
+            if user_id in self.ai_processing_tasks:
+                task = self.ai_processing_tasks[user_id]
+                if not task.done():
+                    task.cancel()
+                del self.ai_processing_tasks[user_id]
+            
+            # 清理连接信息
+            del self.connections[user_id]
+            if user_id in self.user_activity:
+                del self.user_activity[user_id]
+            if user_id in self.user_ai_sessions:
+                del self.user_ai_sessions[user_id]
+            
+            self.stats["active_connections"] = len(self.connections)
+            logger.info(f"用户 {user_id} 已断开AI对话连接")
+    
+    async def send_to_user(self, user_id: int, message: dict) -> bool:
+        """发送消息给指定用户"""
+        if user_id not in self.connections:
+            return False
+        
+        try:
+            websocket = self.connections[user_id]
+            await websocket.send_text(json.dumps(message, ensure_ascii=False))
+            self.user_activity[user_id] = datetime.utcnow()
+            return True
+        except Exception as e:
+            logger.error(f"发送消息失败 (用户ID: {user_id}): {e}")
+            await self.disconnect(user_id)
+            return False
+    
+    async def start_ai_session(self, user_id: int, ai_character_id: str) -> bool:
+        """开始AI会话"""
+        if user_id not in self.connections:
+            return False
+        
+        self.user_ai_sessions[user_id] = ai_character_id
+        
+        # 发送会话开始消息
+        await self.send_to_user(user_id, {
+            "type": "ai_session_started",
+            "ai_character_id": ai_character_id,
+            "message": "AI会话已开始",
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        })
+        
+        return True
+    
+    async def end_ai_session(self, user_id: int) -> bool:
+        """结束AI会话"""
+        if user_id in self.user_ai_sessions:
+            ai_character_id = self.user_ai_sessions[user_id]
+            del self.user_ai_sessions[user_id]
+            
+            # 发送会话结束消息
+            await self.send_to_user(user_id, {
+                "type": "ai_session_ended",
+                "ai_character_id": ai_character_id,
+                "message": "AI会话已结束",
+                "timestamp": datetime.utcnow().isoformat() + "Z"
+            })
+            
+            return True
+        return False
+    
+    def get_user_ai_session(self, user_id: int) -> Optional[str]:
+        """获取用户的当前AI会话"""
+        return self.user_ai_sessions.get(user_id)
+    
+    def is_user_online(self, user_id: int) -> bool:
+        """检查用户是否在线"""
+        return user_id in self.connections
+    
+    def get_online_users(self) -> List[int]:
+        """获取在线用户列表"""
+        return list(self.connections.keys())
+    
+    def get_stats(self) -> dict:
+        """获取统计信息"""
+        return {
+            **self.stats,
+            "online_users": self.get_online_users(),
+            "online_count": len(self.connections),
+            "active_ai_sessions": len(self.user_ai_sessions),
+            "processing_tasks": len(self.ai_processing_tasks)
+        }
+    
+    async def send_ai_stream_start(self, user_id: int, message_id: str):
+        """发送AI流式回复开始信号"""
+        await self.send_to_user(user_id, {
+            "type": "ai_stream_start",
+            "message_id": message_id,
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        })
+    
+    async def send_ai_stream_chunk(self, user_id: int, message_id: str, chunk: str):
+        """发送AI流式回复片段"""
+        await self.send_to_user(user_id, {
+            "type": "ai_stream_chunk",
+            "message_id": message_id,
+            "chunk": chunk,
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        })
+    
+    async def send_ai_stream_end(self, user_id: int, message_id: str, final_content: str):
+        """发送AI流式回复结束信号"""
+        await self.send_to_user(user_id, {
+            "type": "ai_stream_end",
+            "message_id": message_id,
+            "final_content": final_content,
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        })
+    
+    async def send_ai_error(self, user_id: int, error_message: str):
+        """发送AI错误消息"""
+        await self.send_to_user(user_id, {
+            "type": "ai_error",
+            "error": error_message,
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        })
+    
+    def set_ai_processing_task(self, user_id: int, task: asyncio.Task):
+        """设置AI处理任务"""
+        self.ai_processing_tasks[user_id] = task
+    
+    def clear_ai_processing_task(self, user_id: int):
+        """清除AI处理任务"""
+        if user_id in self.ai_processing_tasks:
+            del self.ai_processing_tasks[user_id]
+
+# 全局AI对话管理器实例
+ai_manager = AIConnectionManager()
+

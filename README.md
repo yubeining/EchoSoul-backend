@@ -1,13 +1,9 @@
 # EchoSoul AI Platform Backend
 
-## 📢 最新更新
-
-### 🆕 AI会话接口升级 (2025-09-21)
-- **用户-AI会话创建接口** 已升级为 **get-or-create** 模式
-- **避免重复创建**：同一个用户与同一个AI角色只会有一个会话
-- **保持连续性**：每次调用都返回相同的 `conversation_id`
-- **智能判断**：自动识别是创建新会话还是返回现有会话
-- **详情请见**：[API变更通知](./API_CHANGELOG.md) | [前端通知](./FRONTEND_API_UPDATE.md)
+## 📢 项目状态
+- **版本**: v2.0.0 (优化版)
+- **状态**: ✅ 生产就绪
+- **架构**: 🚀 已重构优化
 
 ## 🚀 项目概述
 
@@ -38,12 +34,14 @@ echosoul-backend/
 │   ├── middleware/        # 中间件
 │   ├── models/            # 数据模型
 │   ├── schemas/           # Pydantic 模式
-│   └── services/          # 业务逻辑
+│   ├── services/          # 业务逻辑
+│   └── websocket/         # WebSocket处理
 ├── config/                 # 配置文件
 ├── docs/                   # 项目文档
-├── tests/                  # 测试文件
 └── requirements.txt        # 依赖管理
 ```
+
+详细结构请查看 [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md)
 
 ## 🔧 快速开始
 

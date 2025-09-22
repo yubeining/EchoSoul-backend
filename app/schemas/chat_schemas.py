@@ -38,6 +38,7 @@ class ConversationResponse(BaseModel):
     last_message_id: Optional[int] = None
     last_message_time: Optional[datetime] = None
     status: int
+    last_message: Optional["MessageResponse"] = None  # 最后一条消息的详细信息
     create_time: datetime
     update_time: Optional[datetime] = None
     
@@ -85,6 +86,8 @@ class MessageResponse(BaseModel):
     receiver_id: int
     content: str
     message_type: MessageType
+    is_ai_message: bool = False  # 是否为AI消息
+    ai_character_id: Optional[str] = None  # AI角色ID
     file_url: Optional[str] = None
     file_name: Optional[str] = None
     file_size: Optional[int] = None

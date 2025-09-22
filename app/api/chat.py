@@ -190,28 +190,9 @@ async def get_conversation_messages(
         data=response_data
     )
 
-@router.post("/messages/ai", 
-             response_model=SendMessageResponse,
-             summary="发送消息到AI角色")
-async def send_ai_message(
-    conversation_id: str = Query(..., description="会话ID"),
-    content: str = Query(..., description="消息内容"),
-    current_user: AuthUser = Depends(get_current_user),
-    db: Session = Depends(get_database_session)
-):
-    """发送消息到AI角色并获取AI回复"""
-    success, message, data = ChatService.send_ai_message(
-        db, conversation_id, content, current_user.id
-    )
-    
-    if not success:
-        raise HTTPException(status_code=400, detail=message)
-    
-    return SendMessageResponse(
-        code=1,
-        msg=message,
-        data=data
-    )
+# 注意：AI聊天功能已集成到 /messages 接口中
+# 当会话类型为 'user_ai' 时，系统会自动处理AI回复
+# 不再需要单独的 /messages/ai 接口
 
 @router.get("/messages/{message_id}", 
             response_model=MessageBaseResponse,

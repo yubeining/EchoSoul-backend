@@ -4,31 +4,33 @@ API Package - EchoSoul AI Platform
 """
 
 from fastapi import APIRouter
-from app.api import database, stats, auth, security, user_search, chat, ai_character, llm_chat, websocket
+from app.api import (
+    database, stats, auth, security, user_search, 
+    chat, ai_character, llm_chat, websocket, ai_websocket
+)
 from config.settings import settings
 
 # 创建主API路由器
 api_router = APIRouter()
 
 # 注册核心API路由
-api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
-api_router.include_router(database.router, prefix="/db", tags=["database"])
-api_router.include_router(user_search.router, prefix="/users", tags=["user-search"])
-api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
-api_router.include_router(ai_character.router, prefix="/ai", tags=["ai-character"])
-api_router.include_router(llm_chat.router, prefix="/llm", tags=["llm-chat"])
-api_router.include_router(websocket.router, prefix="/ws", tags=["websocket"])
-# ai_requests 和 system_logs 路由已移除，因为项目中没有实际使用这些表
-api_router.include_router(stats.router, prefix="/stats", tags=["statistics"])
-api_router.include_router(security.router, prefix="/security", tags=["security"])
+api_router.include_router(auth.router, prefix="/auth", tags=["认证"])
+api_router.include_router(database.router, prefix="/db", tags=["数据库"])
+api_router.include_router(user_search.router, prefix="/users", tags=["用户搜索"])
+api_router.include_router(chat.router, prefix="/chat", tags=["聊天"])
+api_router.include_router(ai_character.router, prefix="/ai", tags=["AI角色"])
+api_router.include_router(llm_chat.router, prefix="/llm", tags=["大模型"])
+api_router.include_router(websocket.router, prefix="/ws", tags=["WebSocket"])
+api_router.include_router(ai_websocket.router, prefix="/ws", tags=["AI WebSocket"])
+api_router.include_router(stats.router, prefix="/stats", tags=["统计"])
+api_router.include_router(security.router, prefix="/security", tags=["安全"])
 
 # 注册存储API路由（可选）
 try:
     from app.api import storage
-    api_router.include_router(storage.router, prefix="/storage", tags=["storage"])
-    print("✅ Storage API router included")
-except Exception as e:
-    print(f"⚠️ Failed to include storage router: {e}")
+    api_router.include_router(storage.router, prefix="/storage", tags=["存储"])
+except ImportError:
+    pass
 
 # API健康检查端点
 @api_router.get("/health")

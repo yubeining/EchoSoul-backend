@@ -81,9 +81,13 @@ class LLMService:
                 
                 # 检查响应状态
                 if response.status_code == 200:
-                    result = response.json()
-                    logger.info(f"大模型API调用成功: {model}")
-                    return result
+                    if stream:
+                        # 处理流式响应
+                        return await cls._handle_stream_response(response)
+                    else:
+                        result = response.json()
+                        logger.info(f"大模型API调用成功: {model}")
+                        return result
                 else:
                     logger.error(f"大模型API调用失败: {response.status_code}, {response.text}")
                     return None
@@ -243,3 +247,140 @@ class LLMService:
                 "success": False,
                 "error": f"解析响应失败: {str(e)}"
             }
+    
+    @classmethod
+    async def _handle_stream_response(cls, response) -> Optional[Dict[str, Any]]:
+        """
+        处理流式响应
+        
+        Args:
+            response: HTTP响应对象
+            
+        Returns:
+            流式响应结果
+        """
+        try:
+            full_content = ""
+            async for line in response.aiter_lines():
+                if line.startswith("data: "):
+                    data = line[6:]  # 移除 "data: " 前缀
+                    
+                    if data.strip() == "[DONE]":
+                        break
+                    
+                    try:
+                        chunk_data = json.loads(data)
+                        if "choices" in chunk_data and len(chunk_data["choices"]) > 0:
+                            choice = chunk_data["choices"][0]
+                            if "delta" in choice and "content" in choice["delta"]:
+                                content = choice["delta"]["content"]
+                                full_content += content
+                    except json.JSONDecodeError:
+                        continue
+            
+            return {
+                "success": True,
+                "content": full_content,
+                "role": "assistant",
+                "finish_reason": "stop",
+                "model": "streaming",
+                "created": int(datetime.utcnow().timestamp())
+            }
+            
+        except Exception as e:
+            logger.error(f"处理流式响应异常: {str(e)}")
+            return {
+                "success": False,
+                "error": f"处理流式响应失败: {str(e)}"
+            }
+    
+    @classmethod
+    async def stream_chat_completion(
+        cls,
+        messages: List[Dict[str, str]],
+        model: str = None,
+        max_tokens: int = None,
+        temperature: float = None,
+        **kwargs
+    ) -> Optional[Dict[str, Any]]:
+        """
+        流式聊天完成
+        
+        Args:
+            messages: 对话消息列表
+            model: 模型名称
+            max_tokens: 最大生成token数
+            temperature: 温度参数
+            **kwargs: 其他参数
+            
+        Returns:
+            流式响应结果
+        """
+        return await cls.chat_completion(
+            messages=messages,
+            model=model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            stream=True,
+            **kwargs
+        )
+    
+    @classmethod
+    async def stream_chat_with_character(
+        cls,
+        user_message: str,
+        character_name: str,
+        character_personality: str = None,
+        conversation_history: List[Dict[str, str]] = None,
+        **kwargs
+    ) -> Optional[str]:
+        """
+        流式与AI角色对话
+        
+        Args:
+            user_message: 用户消息
+            character_name: 角色名称
+            character_personality: 角色性格描述
+            conversation_history: 对话历史
+            **kwargs: 其他参数
+            
+        Returns:
+            AI角色流式回复或None（如果失败）
+        """
+        try:
+            # 构建角色系统提示词
+            system_prompt = f"你是{character_name}，"
+            if character_personality:
+                system_prompt += f"具有以下性格特点：{character_personality}。"
+            system_prompt += "请以这个角色的身份和用户对话，保持角色的一致性。"
+            
+            # 构建消息列表
+            messages = []
+            
+            # 添加系统提示词
+            messages.append({
+                "role": "system",
+                "content": system_prompt
+            })
+            
+            # 添加对话历史
+            if conversation_history:
+                messages.extend(conversation_history)
+            
+            # 添加当前用户消息
+            messages.append({
+                "role": "user",
+                "content": user_message
+            })
+            
+            # 调用流式API
+            result = await cls.stream_chat_completion(messages, **kwargs)
+            
+            if result and result.get("success") and "content" in result:
+                return result["content"]
+            else:
+                return None
+                
+        except Exception as e:
+            logger.error(f"流式角色对话调用异常: {str(e)}")
+            return None

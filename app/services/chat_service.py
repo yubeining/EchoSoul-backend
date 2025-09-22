@@ -5,7 +5,7 @@ EchoSoul AI Platform Chat Service
 
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Dict
 import uuid
 from datetime import datetime
 
@@ -118,7 +118,7 @@ class ChatService:
         current_user_id: int, 
         request: SendMessageRequest
     ) -> Tuple[bool, str, Optional[MessageResponse]]:
-        """发送消息"""
+        """发送消息（支持用户间聊天和AI聊天）"""
         try:
             # 检查会话是否存在
             conversation = db.query(Conversation).filter(
@@ -135,6 +135,27 @@ class ChatService:
             if current_user_id not in [conversation.user1_id, conversation.user2_id]:
                 return False, "无权限在此会话中发送消息", None
             
+            # 判断是否为AI会话
+            if conversation.conversation_type == 'user_ai':
+                # 处理AI会话
+                return ChatService._handle_ai_conversation(db, conversation, current_user_id, request)
+            else:
+                # 处理普通用户间会话
+                return ChatService._handle_user_conversation(db, conversation, current_user_id, request)
+            
+        except Exception as e:
+            db.rollback()
+            return False, f"发送消息失败: {str(e)}", None
+    
+    @staticmethod
+    def _handle_user_conversation(
+        db: Session,
+        conversation: Conversation,
+        current_user_id: int,
+        request: SendMessageRequest
+    ) -> Tuple[bool, str, Optional[MessageResponse]]:
+        """处理用户间会话"""
+        try:
             # 确定接收者ID
             receiver_id = conversation.user2_id if current_user_id == conversation.user1_id else conversation.user1_id
             
@@ -150,11 +171,13 @@ class ChatService:
                 file_url=request.file_url,
                 file_name=request.file_name,
                 file_size=request.file_size,
-                reply_to_message_id=request.reply_to_message_id
+                reply_to_message_id=request.reply_to_message_id,
+                is_ai_message=False,
+                ai_character_id=None
             )
             
             db.add(new_message)
-            db.flush()  # 刷新以获取消息ID，但不提交事务
+            db.flush()
             
             # 更新会话的最后消息信息
             conversation.last_message_id = new_message.id
@@ -167,7 +190,82 @@ class ChatService:
             
         except Exception as e:
             db.rollback()
-            return False, f"发送消息失败: {str(e)}", None
+            return False, f"发送用户消息失败: {str(e)}", None
+    
+    @staticmethod
+    def _handle_ai_conversation(
+        db: Session,
+        conversation: Conversation,
+        current_user_id: int,
+        request: SendMessageRequest
+    ) -> Tuple[bool, str, Optional[MessageResponse]]:
+        """处理AI会话"""
+        try:
+            # 获取AI角色信息
+            ai_character = db.query(AICharacter).filter(
+                and_(
+                    AICharacter.character_id == conversation.ai_character_id,
+                    AICharacter.status == 1
+                )
+            ).first()
+            
+            if not ai_character:
+                return False, "AI角色不存在", None
+            
+            # 1. 保存用户消息
+            user_message_id = str(uuid.uuid4())
+            user_message = Message(
+                message_id=user_message_id,
+                conversation_id=request.conversation_id,
+                sender_id=current_user_id,
+                receiver_id=0,  # AI使用0作为receiver_id
+                content=request.content,
+                message_type=request.message_type.value,
+                file_url=request.file_url,
+                file_name=request.file_name,
+                file_size=request.file_size,
+                reply_to_message_id=request.reply_to_message_id,
+                is_ai_message=False,  # 用户消息
+                ai_character_id=ai_character.character_id  # 标明是发给哪个AI的消息
+            )
+            
+            db.add(user_message)
+            db.flush()
+            
+            # 2. 生成AI回复（集成真实LLM API）
+            ai_reply = ChatService._generate_ai_reply_with_llm(request.content, ai_character, conversation.conversation_id, db)
+            
+            # 3. 保存AI回复
+            ai_message_id = str(uuid.uuid4())
+            ai_message = Message(
+                message_id=ai_message_id,
+                conversation_id=request.conversation_id,
+                sender_id=0,  # AI使用0作为ID
+                receiver_id=current_user_id,
+                content=ai_reply,
+                message_type='text',
+                is_ai_message=True,
+                ai_character_id=ai_character.character_id
+            )
+            
+            db.add(ai_message)
+            db.flush()
+            
+            # 4. 更新会话的最后消息信息
+            conversation.last_message_id = ai_message.id
+            conversation.last_message_time = datetime.utcnow()
+            
+            # 5. 增加AI角色使用次数
+            ai_character.usage_count += 1
+            
+            db.commit()
+            db.refresh(ai_message)
+            
+            return True, "AI回复成功", MessageResponse.from_orm(ai_message)
+            
+        except Exception as e:
+            db.rollback()
+            return False, f"AI会话处理失败: {str(e)}", None
     
     @staticmethod
     def get_conversation_messages(
@@ -320,10 +418,93 @@ class ChatService:
             return False, f"发送消息失败: {str(e)}", None
     
     @staticmethod
-    def _generate_ai_reply(user_message: str, ai_character: AICharacter) -> str:
-        """生成AI回复（模拟AI回复逻辑）"""
-        # 这里可以集成真实的AI服务，如OpenAI、Claude等
-        # 目前使用简单的模拟回复
+    def _generate_ai_reply_with_llm(
+        user_message: str, 
+        ai_character: AICharacter, 
+        conversation_id: str,
+        db: Session
+    ) -> str:
+        """生成AI回复（集成真实LLM API）"""
+        try:
+            # 导入LLM服务
+            from app.services.llm_service import LLMService
+            
+            # 获取对话历史（最近10条消息）
+            conversation_history = ChatService._get_conversation_history_for_llm(
+                db, conversation_id, limit=10
+            )
+            
+            # 调用LLM服务（使用同步方式）
+            try:
+                import asyncio
+                # 创建新的事件循环来运行异步函数
+                ai_reply = asyncio.run(
+                    LLMService.chat_with_character(
+                        user_message=request.content,
+                        character_name=ai_character.nickname,
+                        character_personality=ai_character.personality,
+                        conversation_history=conversation_history,
+                        max_tokens=512,
+                        temperature=0.8
+                    )
+                )
+            except Exception as e:
+                # 如果异步调用失败，使用降级回复
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"LLM API调用失败: {str(e)}")
+                ai_reply = None
+            
+            if ai_reply:
+                return ai_reply
+            else:
+                # 如果LLM调用失败，使用降级回复
+                return ChatService._generate_fallback_reply(user_message, ai_character)
+                
+        except Exception as e:
+            # 记录错误日志
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"LLM API调用失败: {str(e)}")
+            
+            # 使用降级回复
+            return ChatService._generate_fallback_reply(user_message, ai_character)
+    
+    @staticmethod
+    def _get_conversation_history_for_llm(
+        db: Session, 
+        conversation_id: str, 
+        limit: int = 10
+    ) -> List[Dict[str, str]]:
+        """获取对话历史，格式化为LLM需要的格式"""
+        try:
+            messages = db.query(Message).filter(
+                and_(
+                    Message.conversation_id == conversation_id,
+                    Message.is_deleted == 0
+                )
+            ).order_by(desc(Message.create_time)).limit(limit).all()
+            
+            history = []
+            for msg in reversed(messages):  # 按时间正序排列
+                role = "assistant" if msg.is_ai_message else "user"
+                history.append({
+                    "role": role,
+                    "content": msg.content
+                })
+            
+            return history
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"获取对话历史失败: {str(e)}")
+            return []
+    
+    @staticmethod
+    def _generate_fallback_reply(user_message: str, ai_character: AICharacter) -> str:
+        """生成降级回复（当LLM API不可用时）"""
+        import random
         
         # 根据角色的人设和说话风格生成回复
         personality = ai_character.personality or "友好"
@@ -339,7 +520,6 @@ class ChatService:
         ]
         
         # 根据消息内容选择回复
-        import random
         if "你好" in user_message or "hello" in user_message.lower():
             return f"你好！我是{ai_character.nickname}，很高兴认识你！{ai_character.description or ''}"
         elif "再见" in user_message or "bye" in user_message.lower():
