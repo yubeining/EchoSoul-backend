@@ -131,3 +131,4 @@ async def disconnect_user_ai_chat(user_id: int):
         logger.error(f"断开用户AI对话连接失败: {e}")
         raise HTTPException(status_code=500, detail="断开连接失败")
 
+

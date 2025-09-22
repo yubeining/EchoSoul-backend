@@ -25,6 +25,14 @@ class DatabaseStatusResponse(BaseModel):
     message: str
     tables_created: bool = False
 
+class PaginationParams(BaseModel):
+    """分页参数模型"""
+    page: int = 1
+    limit: int = 20
+    
+    def __init__(self, page: int = 1, limit: int = 20, **data):
+        super().__init__(page=page, limit=limit, **data)
+
 class PaginationInfo(BaseModel):
     """分页信息模型"""
     current_page: int

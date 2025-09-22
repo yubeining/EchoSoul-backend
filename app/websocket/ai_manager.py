@@ -65,22 +65,44 @@ class AIConnectionManager:
     async def disconnect(self, user_id: int):
         """断开AI对话连接"""
         if user_id in self.connections:
-            # 取消正在处理的AI任务
-            if user_id in self.ai_processing_tasks:
-                task = self.ai_processing_tasks[user_id]
-                if not task.done():
-                    task.cancel()
-                del self.ai_processing_tasks[user_id]
-            
-            # 清理连接信息
-            del self.connections[user_id]
-            if user_id in self.user_activity:
-                del self.user_activity[user_id]
-            if user_id in self.user_ai_sessions:
-                del self.user_ai_sessions[user_id]
-            
-            self.stats["active_connections"] = len(self.connections)
-            logger.info(f"用户 {user_id} 已断开AI对话连接")
+            try:
+                # 取消正在处理的AI任务
+                if user_id in self.ai_processing_tasks:
+                    task = self.ai_processing_tasks[user_id]
+                    if not task.done():
+                        task.cancel()
+                        try:
+                            await task
+                        except asyncio.CancelledError:
+                            pass
+                    del self.ai_processing_tasks[user_id]
+                
+                # 尝试关闭WebSocket连接
+                websocket = self.connections[user_id]
+                if websocket:
+                    try:
+                        await websocket.close()
+                    except Exception as e:
+                        logger.warning(f"关闭WebSocket连接失败: {e}")
+                
+                # 清理连接信息
+                del self.connections[user_id]
+                if user_id in self.user_activity:
+                    del self.user_activity[user_id]
+                if user_id in self.user_ai_sessions:
+                    del self.user_ai_sessions[user_id]
+                
+                self.stats["active_connections"] = len(self.connections)
+                logger.info(f"用户 {user_id} 已断开AI对话连接")
+                
+            except Exception as e:
+                logger.error(f"断开连接时发生错误: {e}")
+                # 强制清理
+                self.connections.pop(user_id, None)
+                self.user_activity.pop(user_id, None)
+                self.user_ai_sessions.pop(user_id, None)
+                self.ai_processing_tasks.pop(user_id, None)
+                self.stats["active_connections"] = len(self.connections)
     
     async def send_to_user(self, user_id: int, message: dict) -> bool:
         """发送消息给指定用户"""
@@ -195,7 +217,52 @@ class AIConnectionManager:
         """清除AI处理任务"""
         if user_id in self.ai_processing_tasks:
             del self.ai_processing_tasks[user_id]
+    
+    async def cleanup_inactive_connections(self, timeout_minutes: int = 30):
+        """清理非活跃连接"""
+        current_time = datetime.utcnow()
+        inactive_users = []
+        
+        for user_id, last_activity in self.user_activity.items():
+            if (current_time - last_activity).total_seconds() > timeout_minutes * 60:
+                inactive_users.append(user_id)
+        
+        for user_id in inactive_users:
+            logger.info(f"清理非活跃连接: 用户 {user_id}")
+            await self.disconnect(user_id)
+    
+    async def health_check_connections(self):
+        """检查连接健康状态"""
+        dead_connections = []
+        
+        for user_id, websocket in self.connections.items():
+            try:
+                # 发送ping消息检查连接
+                await websocket.send_text(json.dumps({
+                    "type": "ping",
+                    "timestamp": datetime.utcnow().isoformat() + "Z"
+                }))
+            except Exception as e:
+                logger.warning(f"连接健康检查失败 (用户ID: {user_id}): {e}")
+                dead_connections.append(user_id)
+        
+        # 清理死连接
+        for user_id in dead_connections:
+            logger.info(f"清理死连接: 用户 {user_id}")
+            await self.disconnect(user_id)
+    
+    def get_connection_stats(self) -> dict:
+        """获取连接统计信息"""
+        return {
+            "total_connections": self.stats["total_connections"],
+            "active_connections": len(self.connections),
+            "active_ai_sessions": len(self.user_ai_sessions),
+            "processing_tasks": len(self.ai_processing_tasks),
+            "online_users": list(self.connections.keys()),
+            "ai_sessions": dict(self.user_ai_sessions)
+        }
 
 # 全局AI对话管理器实例
 ai_manager = AIConnectionManager()
+
 

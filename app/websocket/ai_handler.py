@@ -64,6 +64,7 @@ class AIMessageHandler:
         if not ai_character_id:
             return {"success": False, "error": "缺少AI角色ID"}
         
+        db = None
         try:
             db = next(get_database_session())
             
@@ -129,7 +130,8 @@ class AIMessageHandler:
             logger.error(f"开始AI会话失败: {e}")
             return {"success": False, "error": f"开始AI会话失败: {str(e)}"}
         finally:
-            db.close()
+            if db:
+                db.close()
     
     @staticmethod
     async def _handle_end_ai_session(user_id: int, message_data: dict) -> dict:
@@ -159,6 +161,7 @@ class AIMessageHandler:
         if not current_ai_session:
             return {"success": False, "error": "没有活跃的AI会话"}
         
+        db = None
         try:
             db = next(get_database_session())
             
@@ -210,11 +213,11 @@ class AIMessageHandler:
                 "timestamp": datetime.utcnow().isoformat() + "Z"
             })
             
-            # 3. 异步处理AI回复
+            # 3. 异步处理AI回复（传递会话信息而不是db对象）
             ai_message_id = str(uuid.uuid4())
             task = asyncio.create_task(
-                AIMessageHandler._process_ai_reply(
-                    db, conversation, ai_character, user_message, ai_message_id
+                AIMessageHandler._process_ai_reply_async(
+                    conversation_id, ai_character.character_id, user_message.content, ai_message_id
                 )
             )
             ai_manager.set_ai_processing_task(user_id, task)
@@ -230,31 +233,57 @@ class AIMessageHandler:
             logger.error(f"处理聊天消息失败: {e}")
             return {"success": False, "error": f"处理消息失败: {str(e)}"}
         finally:
-            db.close()
+            if db:
+                db.close()
     
     @staticmethod
-    async def _process_ai_reply(
-        db: Session,
-        conversation: Conversation,
-        ai_character: AICharacter,
-        user_message: Message,
+    async def _process_ai_reply_async(
+        conversation_id: str,
+        ai_character_id: str,
+        user_message_content: str,
         ai_message_id: str
     ):
-        """异步处理AI回复"""
-        user_id = conversation.user1_id
-        
+        """异步处理AI回复（独立数据库会话）"""
+        db = None
         try:
+            db = next(get_database_session())
+            
+            # 获取会话和AI角色信息
+            conversation = db.query(Conversation).filter(
+                and_(
+                    Conversation.conversation_id == conversation_id,
+                    Conversation.status == 1
+                )
+            ).first()
+            
+            if not conversation:
+                logger.error(f"会话不存在: {conversation_id}")
+                return
+            
+            ai_character = db.query(AICharacter).filter(
+                and_(
+                    AICharacter.character_id == ai_character_id,
+                    AICharacter.status == 1
+                )
+            ).first()
+            
+            if not ai_character:
+                logger.error(f"AI角色不存在: {ai_character_id}")
+                return
+            
+            user_id = conversation.user1_id
+            
             # 发送AI回复开始信号
             await ai_manager.send_ai_stream_start(user_id, ai_message_id)
             
             # 获取对话历史
             conversation_history = AIMessageHandler._get_conversation_history_for_llm(
-                db, conversation.conversation_id, limit=10
+                db, conversation_id, limit=10
             )
             
             # 调用流式LLM服务进行回复
             ai_reply = await LLMService.stream_chat_with_character(
-                user_message=user_message.content,
+                user_message=user_message_content,
                 character_name=ai_character.nickname,
                 character_personality=ai_character.personality,
                 conversation_history=conversation_history,
@@ -265,7 +294,7 @@ class AIMessageHandler:
             if not ai_reply:
                 # 使用降级回复
                 ai_reply = AIMessageHandler._generate_fallback_reply(
-                    user_message.content, ai_character
+                    user_message_content, ai_character
                 )
             
             # 模拟流式输出（将回复分成多个片段）
@@ -279,13 +308,13 @@ class AIMessageHandler:
             # 保存AI回复到数据库
             ai_message = Message(
                 message_id=ai_message_id,
-                conversation_id=conversation.conversation_id,
+                conversation_id=conversation_id,
                 sender_id=0,  # AI使用0作为ID
                 receiver_id=user_id,
                 content=ai_reply,
                 message_type='text',
                 is_ai_message=True,
-                ai_character_id=ai_character.character_id
+                ai_character_id=ai_character_id
             )
             
             db.add(ai_message)
@@ -307,10 +336,12 @@ class AIMessageHandler:
             
         except Exception as e:
             logger.error(f"AI回复处理失败: {e}")
-            await ai_manager.send_ai_error(user_id, f"AI回复失败: {str(e)}")
+            if 'user_id' in locals():
+                await ai_manager.send_ai_error(user_id, f"AI回复失败: {str(e)}")
         finally:
-            ai_manager.clear_ai_processing_task(user_id)
-            db.close()
+            ai_manager.clear_ai_processing_task(user_id if 'user_id' in locals() else None)
+            if db:
+                db.close()
     
     @staticmethod
     def _split_into_chunks(text: str, chunk_size: int = 50) -> list:
@@ -385,6 +416,7 @@ class AIMessageHandler:
         if not conversation_id:
             return {"success": False, "error": "缺少会话ID"}
         
+        db = None
         try:
             db = next(get_database_session())
             
@@ -434,11 +466,13 @@ class AIMessageHandler:
             logger.error(f"获取历史消息失败: {e}")
             return {"success": False, "error": f"获取历史消息失败: {str(e)}"}
         finally:
-            db.close()
+            if db:
+                db.close()
     
     @staticmethod
     async def _handle_get_ai_characters(user_id: int, message_data: dict) -> dict:
         """处理获取AI角色列表请求"""
+        db = None
         try:
             db = next(get_database_session())
             
@@ -468,7 +502,8 @@ class AIMessageHandler:
             logger.error(f"获取AI角色列表失败: {e}")
             return {"success": False, "error": f"获取AI角色列表失败: {str(e)}"}
         finally:
-            db.close()
+            if db:
+                db.close()
     
     @staticmethod
     async def _handle_ping(user_id: int, message_data: dict) -> dict:

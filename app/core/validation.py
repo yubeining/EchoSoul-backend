@@ -8,7 +8,6 @@ import html
 import logging
 from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, validator, Field
-from pydantic.validators import str_validator
 import bleach
 
 from app.core.constants import SecurityPatterns, ValidationConstants
@@ -275,3 +274,19 @@ def detect_attack_patterns(content: str) -> List[str]:
             break
     
     return detected
+
+# 便捷验证函数
+def validate_email(email: str) -> str:
+    """验证邮箱格式"""
+    validator = EmailValidator()
+    return validator.validate(email)
+
+def validate_password(password: str) -> str:
+    """验证密码强度"""
+    validator = PasswordValidator()
+    return validator.validate(password)
+
+def validate_username(username: str) -> str:
+    """验证用户名格式"""
+    validator = UsernameValidator()
+    return validator.validate(username)

@@ -22,6 +22,7 @@ from config.settings import settings
 from app.api import api_router
 from app.db import initialize_databases, mysql_db
 from app.middleware import create_rate_limit_middleware
+from app.core.background_tasks import background_task_manager
 
 # 导入所有模型以确保它们被注册到SQLAlchemy
 import app.models
@@ -62,12 +63,23 @@ async def lifespan(app: FastAPI):
             mysql_db.create_tables()
             logger.info("✅ Database tables created successfully")
         
+        # 启动后台任务
+        await background_task_manager.start_all_tasks()
+        logger.info("✅ Background tasks started")
+        
         logger.info("🎉 Application startup completed!")
         
     except Exception as e:
         logger.error(f"❌ Application startup error: {str(e)}")
     
     yield
+    
+    # Shutdown
+    logger.info("🔄 Shutting down application...")
+    
+    # 停止后台任务
+    await background_task_manager.stop_all_tasks()
+    logger.info("✅ Background tasks stopped")
     
     # Shutdown
     if redis_client:

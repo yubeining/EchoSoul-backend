@@ -6,7 +6,7 @@ API Package - EchoSoul AI Platform
 from fastapi import APIRouter
 from app.api import (
     database, stats, auth, security, user_search, 
-    chat, ai_character, llm_chat, websocket, ai_websocket
+    chat, ai_character, llm_chat, websocket, ai_websocket, performance
 )
 from config.settings import settings
 
@@ -24,6 +24,7 @@ api_router.include_router(websocket.router, prefix="/ws", tags=["WebSocket"])
 api_router.include_router(ai_websocket.router, prefix="/ws", tags=["AI WebSocket"])
 api_router.include_router(stats.router, prefix="/stats", tags=["统计"])
 api_router.include_router(security.router, prefix="/security", tags=["安全"])
+api_router.include_router(performance.router, prefix="/performance", tags=["性能监控"])
 
 # 注册存储API路由（可选）
 try:

@@ -94,6 +94,13 @@ class UserDetailResponse(BaseModel):
 # 基础响应
 # BaseResponse 已移至 common_schemas.py
 
+# 用户搜索基础响应
+class UserSearchBaseResponse(BaseModel):
+    """用户搜索基础响应"""
+    code: int
+    msg: str
+    data: Optional[UserSearchResponse] = None
+
 # 用户详情基础响应
 class UserDetailBaseResponse(BaseModel):
     """用户详情基础响应"""

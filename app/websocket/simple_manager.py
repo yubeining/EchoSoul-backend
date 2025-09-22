@@ -101,6 +101,39 @@ class SimpleConnectionManager:
             "online_users": self.get_online_users(),
             "online_count": len(self.connections)
         }
+    
+    async def cleanup_inactive_connections(self, timeout_minutes: int = 30):
+        """清理非活跃连接"""
+        current_time = datetime.utcnow()
+        inactive_users = []
+        
+        for user_id, last_activity in self.user_activity.items():
+            if (current_time - last_activity).total_seconds() > timeout_minutes * 60:
+                inactive_users.append(user_id)
+        
+        for user_id in inactive_users:
+            logger.info(f"清理简单WebSocket非活跃连接: 用户 {user_id}")
+            self.disconnect(user_id)
+    
+    async def health_check_connections(self):
+        """检查连接健康状态"""
+        dead_connections = []
+        
+        for user_id, websocket in self.connections.items():
+            try:
+                # 发送ping消息检查连接
+                await websocket.send_text(json.dumps({
+                    "type": "ping",
+                    "timestamp": datetime.utcnow().isoformat() + "Z"
+                }))
+            except Exception as e:
+                logger.warning(f"简单WebSocket连接健康检查失败 (用户ID: {user_id}): {e}")
+                dead_connections.append(user_id)
+        
+        # 清理死连接
+        for user_id in dead_connections:
+            logger.info(f"清理简单WebSocket死连接: 用户 {user_id}")
+            self.disconnect(user_id)
 
 # 全局实例
 simple_manager = SimpleConnectionManager()
