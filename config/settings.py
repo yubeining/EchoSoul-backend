@@ -18,8 +18,9 @@ class Settings:
     HOST = os.getenv("HOST", "0.0.0.0")
     PORT = int(os.getenv("PORT", 8080))
     
-    # CORS - 开放所有域名的API请求
-    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
+    # CORS - 必须明确指定允许的域名，不能使用通配符*
+    # 当 allow_credentials=True 时，浏览器不允许使用通配符
+    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://cedezmdpgixn.sealosbja.site").split(",")
     
     # Database
     DATABASE_TYPE = os.getenv("DATABASE_TYPE", "mysql")
@@ -67,10 +68,18 @@ class Settings:
     
     @classmethod
     def get_cors_origins(cls) -> List[str]:
-        """Get CORS origins list"""
-        if cls.CORS_ORIGINS == ["*"]:
-            return ["*"]
-        return [origin.strip() for origin in cls.CORS_ORIGINS if origin.strip()]
+        """Get CORS origins list - 当 allow_credentials=True 时不能使用通配符"""
+        # 过滤空字符串并去除首尾空格
+        origins = [origin.strip() for origin in cls.CORS_ORIGINS if origin.strip()]
+        
+        # 如果配置中包含通配符，给出警告
+        if "*" in origins:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning("⚠️ CORS配置包含通配符'*'，但allow_credentials=True，这会导致浏览器拒绝请求！")
+            logger.warning("请明确指定允许的域名，例如：https://your-domain.com,http://localhost:3000")
+        
+        return origins
 
 # Global settings instance
 settings = Settings()
