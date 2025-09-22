@@ -162,12 +162,6 @@ class AIMessageHandler:
             log_operation_error("处理聊天消息", f"消息内容过长: {len(content)}字符", user_id=user_id)
             return {"success": False, "error": "消息内容过长，请控制在10000字符以内"}
         
-        # 检查AI会话状态
-        current_ai_session = ai_manager.get_user_ai_session(user_id)
-        if not current_ai_session:
-            log_operation_error("处理聊天消息", "没有活跃的AI会话", user_id=user_id)
-            return {"success": False, "error": "没有活跃的AI会话"}
-        
         try:
             with get_db_session() as db:
                 # 验证会话和AI角色
@@ -180,6 +174,17 @@ class AIMessageHandler:
                 
                 if not ai_character:
                     return {"success": False, "error": "AI角色不存在"}
+                
+                # 检查AI会话状态，如果没有活跃会话，自动建立会话
+                current_ai_session = ai_manager.get_user_ai_session(user_id)
+                if not current_ai_session:
+                    # 自动建立AI会话
+                    success = await ai_manager.start_ai_session(user_id, ai_character.character_id)
+                    if success:
+                        log_operation_success("自动建立AI会话", user_id=user_id, ai_character_id=ai_character.character_id)
+                    else:
+                        log_operation_error("处理聊天消息", "自动建立AI会话失败", user_id=user_id)
+                        return {"success": False, "error": "无法建立AI会话"}
                 
                 # 保存用户消息
                 user_message_id = frontend_message_id or str(uuid.uuid4())
@@ -244,10 +249,19 @@ class AIMessageHandler:
         
         # 尝试从缓存获取AI角色信息
         cache_key = f"ai_character:{conversation.ai_character_id}"
-        cached_character = cache_get(cache_key)
+        cached_character_data = cache_get(cache_key)
         
-        if cached_character is not None and hasattr(cached_character, 'character_id'):
-            return conversation, cached_character
+        if cached_character_data is not None and isinstance(cached_character_data, dict):
+            # 从缓存数据创建AI角色对象
+            ai_character = AICharacter()
+            ai_character.character_id = cached_character_data['character_id']
+            ai_character.nickname = cached_character_data['nickname']
+            ai_character.description = cached_character_data['description']
+            ai_character.personality = cached_character_data['personality']
+            ai_character.speaking_style = cached_character_data['speaking_style']
+            ai_character.usage_count = cached_character_data['usage_count']
+            ai_character.status = cached_character_data['status']
+            return conversation, ai_character
         
         # 获取AI角色信息
         ai_character = db.query(AICharacter).filter(
@@ -257,9 +271,18 @@ class AIMessageHandler:
             )
         ).first()
         
-        # 缓存AI角色信息（10分钟）
+        # 缓存AI角色信息（10分钟）- 存储字典数据而不是对象
         if ai_character:
-            cache_set(cache_key, ai_character, ttl=600)
+            character_data = {
+                'character_id': ai_character.character_id,
+                'nickname': ai_character.nickname,
+                'description': ai_character.description,
+                'personality': ai_character.personality,
+                'speaking_style': ai_character.speaking_style,
+                'usage_count': ai_character.usage_count,
+                'status': ai_character.status
+            }
+            cache_set(cache_key, character_data, ttl=600)
         
         return conversation, ai_character
     

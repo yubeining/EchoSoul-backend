@@ -42,7 +42,7 @@ class AIConnectionManager:
             
             # 如果用户已有连接，先关闭旧连接
             if user_id in self.connections:
-                await self.disconnect(user_id)
+                await self.disconnect(user_id, clear_ai_session=True)
             
             self.connections[user_id] = websocket
             self.user_activity[user_id] = datetime.utcnow()
@@ -64,7 +64,7 @@ class AIConnectionManager:
             log_operation_error("AI对话连接", str(e), user_id=user_id)
             return False
     
-    async def disconnect(self, user_id: int):
+    async def disconnect(self, user_id: int, clear_ai_session: bool = True):
         """断开AI对话连接"""
         if user_id in self.connections:
             try:
@@ -81,7 +81,7 @@ class AIConnectionManager:
                 
                 # 尝试关闭WebSocket连接
                 websocket = self.connections[user_id]
-                if websocket and not websocket.client_state.disconnected:
+                if websocket and (not hasattr(websocket, 'client_state') or not hasattr(websocket.client_state, 'disconnected') or not websocket.client_state.disconnected):
                     try:
                         await websocket.close()
                     except Exception as e:
@@ -91,7 +91,7 @@ class AIConnectionManager:
                 del self.connections[user_id]
                 if user_id in self.user_activity:
                     del self.user_activity[user_id]
-                if user_id in self.user_ai_sessions:
+                if clear_ai_session and user_id in self.user_ai_sessions:
                     del self.user_ai_sessions[user_id]
                 
                 self.stats["active_connections"] = len(self.connections)
@@ -118,7 +118,7 @@ class AIConnectionManager:
             return True
         except Exception as e:
             log_operation_error("发送消息", str(e), user_id=user_id)
-            await self.disconnect(user_id)
+            await self.disconnect(user_id, clear_ai_session=True)
             return False
     
     async def start_ai_session(self, user_id: int, ai_character_id: str) -> bool:
@@ -231,7 +231,7 @@ class AIConnectionManager:
         
         for user_id in inactive_users:
             log_info(f"清理非活跃连接", user_id=user_id)
-            await self.disconnect(user_id)
+            await self.disconnect(user_id, clear_ai_session=True)
     
     async def health_check_connections(self):
         """检查连接健康状态"""
@@ -240,7 +240,7 @@ class AIConnectionManager:
         for user_id, websocket in self.connections.items():
             try:
                 # 检查连接状态
-                if websocket.client_state.disconnected:
+                if hasattr(websocket, 'client_state') and hasattr(websocket.client_state, 'disconnected') and websocket.client_state.disconnected:
                     dead_connections.append(user_id)
                     continue
                 
@@ -256,7 +256,7 @@ class AIConnectionManager:
         # 清理死连接
         for user_id in dead_connections:
             log_info(f"清理死连接", user_id=user_id)
-            await self.disconnect(user_id)
+            await self.disconnect(user_id, clear_ai_session=False)
     
     def get_connection_stats(self) -> dict:
         """获取连接统计信息"""

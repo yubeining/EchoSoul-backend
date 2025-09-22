@@ -18,8 +18,8 @@ class Settings:
     HOST = os.getenv("HOST", "0.0.0.0")
     PORT = int(os.getenv("PORT", 8080))
     
-    # CORS
-    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://echosoul.com,https://cedezmdpgixn.sealosbja.site,https://ohciuodbxwdp.sealosbja.site").split(",")
+    # CORS - 开放所有域名的API请求
+    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
     
     # Database
     DATABASE_TYPE = os.getenv("DATABASE_TYPE", "mysql")
