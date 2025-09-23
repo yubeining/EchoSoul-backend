@@ -60,17 +60,25 @@ async def lifespan(app: FastAPI):
         
         # Create MySQL tables if connected
         if db_results.get("mysql", {}).get("status") == "connected":
-            mysql_db.create_tables()
-            logger.info("✅ Database tables created successfully")
+            try:
+                mysql_db.create_tables()
+                logger.info("✅ Database tables created successfully")
+            except Exception as table_error:
+                logger.error(f"❌ Failed to create database tables: {str(table_error)}")
         
         # 启动后台任务
-        await background_task_manager.start_all_tasks()
-        logger.info("✅ Background tasks started")
+        try:
+            await background_task_manager.start_all_tasks()
+            logger.info("✅ Background tasks started")
+        except Exception as task_error:
+            logger.error(f"❌ Failed to start background tasks: {str(task_error)}")
         
         logger.info("🎉 Application startup completed!")
         
     except Exception as e:
         logger.error(f"❌ Application startup error: {str(e)}")
+        # 不要因为启动错误而阻止应用运行
+        logger.warning("⚠️ Application will continue with limited functionality")
     
     yield
     

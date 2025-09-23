@@ -49,7 +49,7 @@ class AIConnectionManager:
             self.stats["active_connections"] = len(self.connections)
             self.stats["total_connections"] += 1
             
-            log_info(f"用户已连接到AI对话", user_id=user_id)
+            log_info(f"用户 {user_id} 已连接AI对话服务")
             
             # 发送连接成功消息
             await self.send_to_user(user_id, {

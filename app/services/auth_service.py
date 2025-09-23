@@ -25,6 +25,13 @@ class AuthService:
     def register_user(db: Session, request: UserRegisterRequest) -> Tuple[bool, str, Optional[RegisterResponse]]:
         """用户注册"""
         try:
+            # 验证输入数据
+            if not request.mobileOrEmail or not request.password:
+                return False, "手机号/邮箱和密码不能为空", None
+            
+            if len(request.password) < 6:
+                return False, "密码长度不能少于6位", None
+            
             # 检查用户名是否已存在
             existing_user = db.query(User).filter(User.username == request.mobileOrEmail).first()
             if existing_user:

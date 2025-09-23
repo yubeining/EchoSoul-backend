@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 from datetime import datetime
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
+from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -187,17 +188,24 @@ class ErrorHandler:
                     "success": False,
                     "error": exc.detail,
                     "error_type": "http_error",
-                    "timestamp": datetime.utcnow().isoformat() + "Z"
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "path": str(request.url.path)
                 }
             )
         else:
+            # 在生产环境中隐藏详细错误信息
+            error_message = "服务器内部错误"
+            if settings.DEBUG:
+                error_message = f"服务器内部错误: {str(exc)}"
+            
             return JSONResponse(
                 status_code=500,
                 content={
                     "success": False,
-                    "error": "服务器内部错误",
+                    "error": error_message,
                     "error_type": "internal_error",
-                    "timestamp": datetime.utcnow().isoformat() + "Z"
+                    "timestamp": datetime.utcnow().isoformat() + "Z",
+                    "path": str(request.url.path)
                 }
             )
 
