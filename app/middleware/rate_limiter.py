@@ -14,7 +14,7 @@ import hashlib
 import logging
 
 from config.settings import settings
-from app.core.constants import RateLimitConfig, SecurityConfig
+from app.core.utils.constants import RateLimitConfig, SecurityConfig
 
 logger = logging.getLogger(__name__)
 

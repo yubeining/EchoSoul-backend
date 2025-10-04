@@ -9,8 +9,8 @@ from typing import Dict, List, Any
 import logging
 
 from app.db import get_database_session
-from app.core.auth import get_current_user
-from app.core.security_monitor import security_monitor, SecurityEventType, SecurityLevel
+from app.core.utils.auth import get_current_user
+from app.core.monitoring.security_monitor import security_monitor, SecurityEventType, SecurityLevel
 # SecurityMiddleware 导入已移除，当前未使用
 from app.models.user_models import AuthUser
 

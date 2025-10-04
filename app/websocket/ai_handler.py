@@ -17,9 +17,9 @@ from app.models.chat_models import Conversation, Message
 from app.models.ai_character_models import AICharacter
 from app.db import get_database_session, mysql_db
 from app.services.llm_service import LLMService
-from app.core.database_context import get_db_session
-from app.core.logging_manager import log_operation_start, log_operation_success, log_operation_error, log_info
-from app.core.cache_manager import cache_get, cache_set, cached
+from app.core.utils.database_context import get_db_session
+from app.core.management.logging_manager import log_operation_start, log_operation_success, log_operation_error, log_info
+from app.core.utils.cache_manager import cache_get, cache_set, cached
 
 logger = logging.getLogger(__name__)
 

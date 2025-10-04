@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, validator, Field
 import bleach
 
-from app.core.constants import SecurityPatterns, ValidationConstants
+from app.core.utils.constants import SecurityPatterns, ValidationConstants
 
 logger = logging.getLogger(__name__)
 

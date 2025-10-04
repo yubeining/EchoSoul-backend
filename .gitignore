@@ -152,10 +152,7 @@ tests/
 test_*.py
 *_test.py
 
-# Documentation
-docs/
 *.md
-!README.md
 
 # Scripts
 scripts/

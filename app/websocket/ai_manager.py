@@ -11,7 +11,7 @@ from fastapi import WebSocket
 from datetime import datetime
 import uuid
 
-from app.core.logging_manager import log_info, log_operation_start, log_operation_success, log_operation_error
+from app.core.management.logging_manager import log_info, log_operation_start, log_operation_success, log_operation_error
 
 logger = logging.getLogger(__name__)
 
@@ -214,6 +214,10 @@ class AIConnectionManager:
     def set_ai_processing_task(self, user_id: int, task: asyncio.Task):
         """设置AI处理任务"""
         self.ai_processing_tasks[user_id] = task
+    
+    def get_ai_processing_task(self, user_id: int) -> Optional[asyncio.Task]:
+        """获取AI处理任务"""
+        return self.ai_processing_tasks.get(user_id)
     
     def clear_ai_processing_task(self, user_id: int):
         """清除AI处理任务"""

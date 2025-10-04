@@ -10,7 +10,7 @@ from typing import Optional, List
 import logging
 
 from app.db import get_database_session
-from app.core.auth import get_current_user
+from app.core.utils.auth import get_current_user
 from app.models.user_models import AuthUser
 from app.services.storage_service import get_storage_service
 from app.schemas.storage_schemas import (

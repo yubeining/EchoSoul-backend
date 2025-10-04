@@ -4,10 +4,10 @@
 """
 
 from fastapi import APIRouter, Depends
-from app.core.performance_monitor import performance_monitor
-from app.core.cache_manager import cache_stats
-from app.core.response_handler import success_response
-from app.core.auth import get_current_user
+from app.core.monitoring.performance_monitor import performance_monitor
+from app.core.utils.cache_manager import cache_stats
+from app.core.management.response_handler import success_response
+from app.core.utils.auth import get_current_user
 from app.models.user_models import AuthUser
 
 router = APIRouter()

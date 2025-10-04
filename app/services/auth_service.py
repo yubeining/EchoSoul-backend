@@ -13,7 +13,7 @@ from app.schemas.auth_schemas import (
     UserRegisterRequest, UserLoginRequest, OAuthLoginRequest,
     RegisterResponse, LoginResponse, UserInfo
 )
-from app.core.auth import (
+from app.core.utils.auth import (
     get_password_hash, authenticate_user, create_access_token,
     generate_username_from_mobile_or_email, update_user_login_info, generate_uid
 )
@@ -218,7 +218,7 @@ class AuthService:
     def change_password(db: Session, user: User, old_password: str, new_password: str) -> Tuple[bool, str]:
         """修改密码"""
         try:
-            from app.core.auth import verify_password
+            from app.core.utils.auth import verify_password
             
             # 验证原密码
             if not verify_password(old_password, user.password):
@@ -229,7 +229,7 @@ class AuthService:
                 return False, "新密码不能与原密码相同"
             
             # 更新密码
-            from app.core.auth import get_password_hash
+            from app.core.utils.auth import get_password_hash
             user.password = get_password_hash(new_password)
             
             db.commit()

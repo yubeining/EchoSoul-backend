@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from urllib.parse import urlparse, parse_qs
 
-from app.core.constants import SecurityPatterns, SecurityConfig
+from app.core.utils.constants import SecurityPatterns, SecurityConfig
 
 logger = logging.getLogger(__name__)
 

@@ -14,7 +14,7 @@ from app.schemas.auth_schemas import (
     BaseResponse, RegisterResponse, LoginResponse, UserInfo, TokenRefreshResponse
 )
 from app.services.auth_service import AuthService
-from app.core.auth import get_current_user, create_access_token
+from app.core.utils.auth import get_current_user, create_access_token
 
 router = APIRouter()
 

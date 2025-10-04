@@ -16,10 +16,11 @@ class DatabaseConfig:
     MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "kzmtbc6b")
     MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "EchoSoul")
     
-    # Redis Configuration (for future use)
-    REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+    # Redis Configuration
+    REDIS_HOST = os.getenv("REDIS_HOST", "echosoul-redis-redis.ns-7rdhhsv1.svc")
     REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-    REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
+    REDIS_USERNAME = os.getenv("REDIS_USERNAME", "default")
+    REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "ppdqrfdk")
     REDIS_DB = int(os.getenv("REDIS_DB", 0))
     
     # MongoDB support removed - using MySQL and Redis only
@@ -37,7 +38,7 @@ class DatabaseConfig:
     @classmethod
     def get_redis_url(cls) -> str:
         """Get Redis connection URL"""
-        auth = f":{cls.REDIS_PASSWORD}@" if cls.REDIS_PASSWORD else ""
+        auth = f"{cls.REDIS_USERNAME}:{cls.REDIS_PASSWORD}@" if cls.REDIS_PASSWORD else ""
         return f"redis://{auth}{cls.REDIS_HOST}:{cls.REDIS_PORT}/{cls.REDIS_DB}"
     
     
@@ -58,6 +59,7 @@ class DatabaseConfig:
                 "url": cls.get_redis_url(),
                 "host": cls.REDIS_HOST,
                 "port": cls.REDIS_PORT,
+                "username": cls.REDIS_USERNAME,
                 "password": cls.REDIS_PASSWORD,
                 "db": cls.REDIS_DB
             },

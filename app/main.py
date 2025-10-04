@@ -22,7 +22,7 @@ from config.settings import settings
 from app.api import api_router
 from app.db import initialize_databases, mysql_db
 from app.middleware import create_rate_limit_middleware
-from app.core.background_tasks import background_task_manager
+from app.core.management.background_tasks import background_task_manager
 
 # 导入所有模型以确保它们被注册到SQLAlchemy
 import app.models

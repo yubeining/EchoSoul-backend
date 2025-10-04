@@ -38,6 +38,12 @@ echosoul-backend/
 │   └── websocket/         # WebSocket处理
 ├── config/                 # 配置文件
 ├── docs/                   # 项目文档
+│   ├── architecture/      # 架构设计文档
+│   └── reports/           # 测试报告
+├── database_schema/        # 数据库设计文档
+├── system_design_docs/     # 系统设计文档
+├── tests/                  # 测试文件
+├── scripts/                # 脚本工具
 └── requirements.txt        # 依赖管理
 ```
 
