@@ -152,7 +152,7 @@ tests/
 test_*.py
 *_test.py
 
-*.md
+
 
 # Scripts
 scripts/
